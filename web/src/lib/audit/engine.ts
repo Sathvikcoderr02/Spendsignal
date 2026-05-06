@@ -11,92 +11,102 @@ const USE_CASE_ALT_BENCHMARK: Record<UseCase, { label: string; targetPerSeat: nu
 
 const formatCurrency = (value: number): string => `$${value.toFixed(0)}`;
 
-const estimateRightSizedSpend = (tool: ToolInput): number | null => {
-  if (tool.seats <= 0) {
-    return 0;
-  }
-
-  if (tool.planId === "team" && tool.seats <= 2) {
-    return 20 * tool.seats;
-  }
-
-  if (tool.planId === "business" && tool.seats <= 3) {
-    return 20 * tool.seats;
-  }
-
-  if (tool.planId === "enterprise" && tool.seats <= 10) {
-    return 30 * tool.seats;
-  }
-
-  if (tool.planId === "max" && tool.seats <= 2) {
-    return 20 * tool.seats;
-  }
-
-  if (tool.planId === "ultra" && tool.seats <= 3) {
-    return 20 * tool.seats;
-  }
-
-  return null;
+type Scenario = {
+  action: string;
+  spend: number;
+  reason: string;
+  rationale: string;
 };
 
-const estimateUseCaseAlternativeSpend = (tool: ToolInput, useCase: UseCase): number | null => {
-  if (tool.seats <= 0) {
-    return 0;
-  }
-
-  const benchmark = USE_CASE_ALT_BENCHMARK[useCase];
-  const altSpend = benchmark.targetPerSeat * tool.seats;
-
-  if (tool.monthlySpend > altSpend) {
-    return altSpend;
-  }
-
-  return null;
+const RIGHTSIZE_PER_SEAT_TARGETS: Record<string, number> = {
+  "chatgpt:team": 20,
+  "claude:team": 20,
+  "claude:max": 20,
+  "cursor:business": 20,
+  "github-copilot:business": 10,
+  "gemini:ultra": 20,
+  "windsurf:teams": 15,
 };
+
+const canRightSize = (tool: ToolInput): boolean => {
+  if (tool.seats <= 0) {
+    return false;
+  }
+  const key = `${tool.toolId}:${tool.planId}`;
+  if (!RIGHTSIZE_PER_SEAT_TARGETS[key]) {
+    return false;
+  }
+  return tool.seats <= 3;
+};
+
+const isApiStylePlan = (planId: string): boolean => planId === "api-direct" || planId === "api";
 
 export function runAudit(input: AuditInput): AuditResult {
   const items = input.tools.map((tool) => {
     const toolName = TOOL_LABELS_BY_ID[tool.toolId];
-    const rightSizedSpend = estimateRightSizedSpend(tool);
-    const altSpend = estimateUseCaseAlternativeSpend(tool, input.primaryUseCase);
+    const baselineScenario: Scenario = {
+      action: "Keep current setup",
+      spend: tool.monthlySpend,
+      reason: "Current spend appears aligned with your usage constraints.",
+      rationale: `Baseline = reported spend ${formatCurrency(tool.monthlySpend)}/mo.`,
+    };
 
-    let recommendedSpend = tool.monthlySpend;
-    let recommendedAction = "No change";
-    let reason = "Current spend appears aligned with your team size and use case.";
+    const scenarios: Scenario[] = [baselineScenario];
 
-    if (rightSizedSpend !== null && rightSizedSpend < recommendedSpend) {
-      recommendedSpend = rightSizedSpend;
-      recommendedAction = "Downgrade to a lower plan tier";
-      reason = `Current ${tool.planId} plan looks oversized for ${tool.seats} seats.`;
+    if (canRightSize(tool)) {
+      const key = `${tool.toolId}:${tool.planId}`;
+      const perSeatTarget = RIGHTSIZE_PER_SEAT_TARGETS[key];
+      const candidateSpend = perSeatTarget * tool.seats;
+      scenarios.push({
+        action: "Downgrade to right-sized plan",
+        spend: candidateSpend,
+        reason: `Current ${tool.planId} plan is typically oversized for ${tool.seats} seats.`,
+        rationale: `${tool.seats} seats x ${formatCurrency(perSeatTarget)}/seat = ${formatCurrency(candidateSpend)}/mo.`,
+      });
     }
 
-    if (altSpend !== null && altSpend < recommendedSpend) {
-      recommendedSpend = altSpend;
-      recommendedAction = `Switch to ${USE_CASE_ALT_BENCHMARK[input.primaryUseCase].label}`;
-      reason = `A use-case-matched stack can deliver similar output at lower monthly cost.`;
+    if (tool.seats > 0 && !isApiStylePlan(tool.planId)) {
+      const benchmark = USE_CASE_ALT_BENCHMARK[input.primaryUseCase];
+      const altSpend = benchmark.targetPerSeat * tool.seats;
+      scenarios.push({
+        action: `Switch to ${benchmark.label}`,
+        spend: altSpend,
+        reason: "A use-case-matched alternative can usually preserve capability at lower cost.",
+        rationale: `${tool.seats} seats x ${formatCurrency(benchmark.targetPerSeat)}/seat benchmark = ${formatCurrency(altSpend)}/mo.`,
+      });
     }
 
-    const creditsDiscountedSpend = tool.monthlySpend * 0.8;
-    if (creditsDiscountedSpend < recommendedSpend) {
-      recommendedSpend = creditsDiscountedSpend;
-      recommendedAction = "Buy equivalent usage via infrastructure credits";
-      reason = "If usage is fixed, credits can reduce retail pricing by roughly 20%.";
+    if (tool.monthlySpend > 0) {
+      const creditsSpend = tool.monthlySpend * 0.8;
+      scenarios.push({
+        action: "Buy equivalent usage via infrastructure credits",
+        spend: creditsSpend,
+        reason: "When usage is stable, discounted credits often reduce effective price by ~20%.",
+        rationale: `${formatCurrency(tool.monthlySpend)} x 0.80 = ${formatCurrency(creditsSpend)}/mo.`,
+      });
     }
 
+    const bestScenario = scenarios.reduce((best, candidate) =>
+      candidate.spend < best.spend ? candidate : best,
+    );
+
+    const recommendedSpend = bestScenario.spend;
     const estimatedMonthlySavings = Math.max(0, Math.round(tool.monthlySpend - recommendedSpend));
     return {
       toolId: tool.toolId,
       toolName,
       currentMonthlySpend: tool.monthlySpend,
+      recommendedMonthlySpend: Math.round(recommendedSpend),
       recommendedAction:
         estimatedMonthlySavings > 0
-          ? `${recommendedAction} (est. new spend ${formatCurrency(recommendedSpend)}/mo)`
+          ? `${bestScenario.action} (est. new spend ${formatCurrency(recommendedSpend)}/mo)`
           : "Keep current setup",
       estimatedMonthlySavings,
       reason:
         estimatedMonthlySavings > 0
-          ? `${reason} Estimated savings: ${formatCurrency(estimatedMonthlySavings)}/month.`
+          ? `${bestScenario.reason} Estimated savings: ${formatCurrency(estimatedMonthlySavings)}/month.`
           : "No credible savings found without reducing capability.",
+      rationale: bestScenario.rationale,
     };
   });
 

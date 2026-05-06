@@ -41,9 +41,11 @@ export interface ToolAuditResult {
   toolId: ToolId;
   toolName: string;
   currentMonthlySpend: number;
+  recommendedMonthlySpend: number;
   recommendedAction: string;
   estimatedMonthlySavings: number;
   reason: string;
+  rationale: string;
 }
 
 export interface AuditResult {

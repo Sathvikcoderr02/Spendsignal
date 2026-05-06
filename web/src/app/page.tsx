@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { TOOL_CATALOG } from "@/lib/audit/pricingCatalog";
 import { runAudit } from "@/lib/audit/engine";
 import type { AuditInput, ToolInput, UseCase } from "@/lib/audit/types";
@@ -21,23 +21,34 @@ const defaultInput: AuditInput = {
 };
 
 export default function Home() {
-  const [input, setInput] = useState<AuditInput>(() => {
-    if (typeof window === "undefined") {
-      return defaultInput;
-    }
+  const [input, setInput] = useState<AuditInput>(defaultInput);
+  const hasLoadedFromStorage = useRef(false);
+
+  useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) {
-      return defaultInput;
+      hasLoadedFromStorage.current = true;
+      return;
     }
     try {
       const parsed = JSON.parse(stored) as AuditInput;
-      return parsed && Array.isArray(parsed.tools) ? parsed : defaultInput;
+      if (parsed && Array.isArray(parsed.tools)) {
+        requestAnimationFrame(() => {
+          setInput(parsed);
+          hasLoadedFromStorage.current = true;
+        });
+        return;
+      }
     } catch {
-      return defaultInput;
+      // Ignore invalid payload and continue with defaults.
     }
-  });
+    hasLoadedFromStorage.current = true;
+  }, []);
 
   useEffect(() => {
+    if (!hasLoadedFromStorage.current) {
+      return;
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(input));
   }, [input]);
 
@@ -159,6 +170,7 @@ export default function Home() {
               </div>
               <p className="mt-1 text-sm">{item.recommendedAction}</p>
               <p className="mt-1 text-xs text-zinc-600">{item.reason}</p>
+              <p className="mt-1 text-xs text-zinc-500">{item.rationale}</p>
             </div>
           ))}
         </div>

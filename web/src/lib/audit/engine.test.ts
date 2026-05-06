@@ -25,6 +25,7 @@ describe("runAudit", () => {
 
     expect(result.totalMonthlySavings).toBeGreaterThan(0);
     expect(result.items[0]?.recommendedAction).toContain("Downgrade");
+    expect(result.items[0]?.rationale).toContain("seats");
   });
 
   it("prefers use-case alternative when cheaper", () => {
@@ -34,15 +35,16 @@ describe("runAudit", () => {
 
     expect(result.totalMonthlySavings).toBeGreaterThan(200);
     expect(result.items[0]?.reason).toContain("Estimated savings");
+    expect(result.items[0]?.recommendedMonthlySpend).toBeLessThan(600);
   });
 
-  it("applies the cheapest recommendation path", () => {
+  it("applies credits for api-direct usage when better", () => {
     const result = runAudit(
       makeInput([{ toolId: "openai-api", planId: "api-direct", monthlySpend: 1000, seats: 10 }], "data"),
     );
 
-    expect(result.items[0]?.recommendedAction).toContain("Switch to");
-    expect(result.totalMonthlySavings).toBe(700);
+    expect(result.items[0]?.recommendedAction).toContain("credits");
+    expect(result.totalMonthlySavings).toBe(200);
   });
 
   it("sets high lead tier above $500 monthly savings", () => {
