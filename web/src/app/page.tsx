@@ -102,191 +102,239 @@ export default function Home() {
     setLeadMessage("Report captured. Check your inbox for your audit summary.");
   };
 
+  const fieldClassName =
+    "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200";
+
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 md:px-8">
-      <h1 className="text-3xl font-semibold tracking-tight">Credex AI Spend Auditor</h1>
-      <p className="mt-2 text-sm text-zinc-600">
-        Enter your current AI tooling spend to get an instant savings audit.
-      </p>
+    <main className="min-h-screen bg-slate-50 py-8">
+      <div className="mx-auto max-w-7xl px-4 md:px-8">
+        <header className="rounded-2xl border border-slate-200 bg-white px-6 py-8 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Credex</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">SpendSignal Audit</h1>
+          <p className="mt-3 max-w-2xl text-sm text-slate-600 md:text-base">
+            Identify AI tooling overspend, compare right-sized plans, and estimate monthly and annual savings in one
+            report.
+          </p>
+        </header>
 
-      <section className="mt-8 rounded-xl border border-zinc-200 p-5">
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="flex flex-col gap-2 text-sm">
-            Team size
-            <input
-              type="number"
-              min={1}
-              className="rounded-md border border-zinc-300 px-3 py-2"
-              value={input.teamSize}
-              onChange={(e) =>
-                setInput((prev) => ({ ...prev, teamSize: Math.max(1, Number(e.target.value || 1)) }))
-              }
-            />
-          </label>
-          <label className="flex flex-col gap-2 text-sm">
-            Primary use case
-            <select
-              className="rounded-md border border-zinc-300 px-3 py-2"
-              value={input.primaryUseCase}
-              onChange={(e) => setUseCase(e.target.value as UseCase)}
-            >
-              <option value="coding">Coding</option>
-              <option value="writing">Writing</option>
-              <option value="data">Data</option>
-              <option value="research">Research</option>
-              <option value="mixed">Mixed</option>
-            </select>
-          </label>
-        </div>
-      </section>
+        <section className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-900">Current stack input</h2>
+            <p className="mt-1 text-sm text-slate-600">Add your plans, spend, and seats. Results update instantly.</p>
 
-      <section className="mt-6 rounded-xl border border-zinc-200 p-5">
-        <h2 className="text-lg font-medium">Tool breakdown</h2>
-        <div className="mt-4 space-y-4">
-          {TOOL_CATALOG.map((tool) => {
-            const value = input.tools.find((item) => item.toolId === tool.id)!;
-            return (
-              <div key={tool.id} className="grid gap-3 rounded-lg border border-zinc-100 p-4 md:grid-cols-4">
-                <div className="text-sm font-medium">{tool.label}</div>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <label className="text-sm font-medium text-slate-700">
+                Team size
+                <input
+                  type="number"
+                  min={1}
+                  className={fieldClassName}
+                  value={input.teamSize}
+                  onChange={(e) =>
+                    setInput((prev) => ({ ...prev, teamSize: Math.max(1, Number(e.target.value || 1)) }))
+                  }
+                />
+              </label>
+              <label className="text-sm font-medium text-slate-700">
+                Primary use case
                 <select
-                  className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                  value={value.planId}
-                  onChange={(e) => updateTool(tool.id, { planId: e.target.value })}
+                  className={fieldClassName}
+                  value={input.primaryUseCase}
+                  onChange={(e) => setUseCase(e.target.value as UseCase)}
                 >
-                  {tool.plans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.label}
-                    </option>
-                  ))}
+                  <option value="coding">Coding</option>
+                  <option value="writing">Writing</option>
+                  <option value="data">Data</option>
+                  <option value="research">Research</option>
+                  <option value="mixed">Mixed</option>
                 </select>
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="Monthly spend"
-                  className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                  value={value.monthlySpend}
-                  onChange={(e) => updateTool(tool.id, { monthlySpend: Math.max(0, Number(e.target.value || 0)) })}
-                />
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="Seats"
-                  className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-                  value={value.seats}
-                  onChange={(e) => updateTool(tool.id, { seats: Math.max(0, Number(e.target.value || 0)) })}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="mt-6 rounded-xl border border-zinc-200 p-5">
-        <h2 className="text-lg font-medium">Audit result</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <div className="rounded-lg bg-zinc-900 p-5 text-white md:col-span-2">
-            <p className="text-xs uppercase tracking-wide text-zinc-300">Potential savings</p>
-            <p className="mt-2 text-4xl font-semibold">${auditResult.totalMonthlySavings}/mo</p>
-            <p className="mt-1 text-zinc-300">${auditResult.totalAnnualSavings}/year</p>
-          </div>
-          <div className="rounded-lg bg-zinc-50 p-4">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">Lead tier</p>
-            <p className="text-2xl font-semibold capitalize">{auditResult.leadTier}</p>
-          </div>
-          <div className="rounded-lg bg-zinc-50 p-4">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">Savings quality</p>
-            <p className="text-lg font-semibold">
-              {isHighSavings
-                ? "High-impact optimization found"
-                : isLowOrOptimal
-                  ? "Current stack is mostly optimized"
-                  : "Meaningful optimizations available"}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 rounded-lg border border-zinc-200 bg-white p-4">
-          {isHighSavings ? (
-            <div>
-              <p className="text-sm font-medium text-emerald-700">
-                You could save more than $500/month. Credex can help lock in discounted infrastructure credits.
-              </p>
-              <button className="mt-3 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white">
-                Book Credex consultation
-              </button>
+              </label>
             </div>
-          ) : isLowOrOptimal ? (
-            <p className="text-sm text-zinc-700">
-              You are spending well for your current setup. We do not manufacture savings - opt in below to get
-              notified when new optimizations apply.
-            </p>
-          ) : (
-            <p className="text-sm text-zinc-700">
-              Your stack has clear savings opportunities. Capture this report and we will send your audit summary.
-            </p>
-          )}
-        </div>
 
-        <div className="mt-5 space-y-3">
-          {auditResult.items.map((item) => (
-            <div key={item.toolId} className="rounded-lg border border-zinc-100 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-medium">{item.toolName}</p>
-                <p className="text-sm text-emerald-700">Potential savings: ${item.estimatedMonthlySavings}/mo</p>
-              </div>
-              <p className="mt-1 text-xs text-zinc-500">
-                Current spend ${item.currentMonthlySpend}/mo {"->"} recommended spend $
-                {item.recommendedMonthlySpend}/mo
-              </p>
-              <p className="mt-1 text-sm">{item.recommendedAction}</p>
-              <p className="mt-1 text-xs text-zinc-600">{item.reason}</p>
-              <p className="mt-1 text-xs text-zinc-500">{item.rationale}</p>
+            <div className="mt-6 space-y-3">
+              {TOOL_CATALOG.map((tool) => {
+                const value = input.tools.find((item) => item.toolId === tool.id)!;
+                return (
+                  <div
+                    key={tool.id}
+                    className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-slate-300"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-900">{tool.label}</p>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        Plan
+                        <select
+                          className={fieldClassName}
+                          value={value.planId}
+                          onChange={(e) => updateTool(tool.id, { planId: e.target.value })}
+                        >
+                          {tool.plans.map((plan) => (
+                            <option key={plan.id} value={plan.id}>
+                              {plan.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        Monthly spend ($)
+                        <input
+                          type="number"
+                          min={0}
+                          className={fieldClassName}
+                          value={value.monthlySpend}
+                          onChange={(e) =>
+                            updateTool(tool.id, { monthlySpend: Math.max(0, Number(e.target.value || 0)) })
+                          }
+                        />
+                      </label>
+                      <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        Seats
+                        <input
+                          type="number"
+                          min={0}
+                          className={fieldClassName}
+                          value={value.seats}
+                          onChange={(e) => updateTool(tool.id, { seats: Math.max(0, Number(e.target.value || 0)) })}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
-
-        <form onSubmit={submitLead} className="mt-6 rounded-lg border border-zinc-200 p-4">
-          <h3 className="text-sm font-semibold">
-            {hasMeaningfulSavings ? "Email me this report" : "Notify me about future optimizations"}
-          </h3>
-          <p className="mt-1 text-xs text-zinc-600">Value is shown first; email capture is optional.</p>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <input
-              type="email"
-              placeholder="Work email *"
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              value={leadForm.email}
-              onChange={(e) => setLeadForm((prev) => ({ ...prev, email: e.target.value }))}
-            />
-            <input
-              type="text"
-              placeholder="Company name (optional)"
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              value={leadForm.companyName}
-              onChange={(e) => setLeadForm((prev) => ({ ...prev, companyName: e.target.value }))}
-            />
-            <input
-              type="text"
-              placeholder="Role (optional)"
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              value={leadForm.role}
-              onChange={(e) => setLeadForm((prev) => ({ ...prev, role: e.target.value }))}
-            />
-            <input
-              type="number"
-              min={1}
-              placeholder="Team size (optional)"
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
-              value={leadForm.teamSize}
-              onChange={(e) => setLeadForm((prev) => ({ ...prev, teamSize: e.target.value }))}
-            />
           </div>
-          <button type="submit" className="mt-3 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white">
-            {isHighSavings ? "Capture report and book consult" : "Capture report"}
-          </button>
-          {leadMessage ? <p className="mt-2 text-xs text-zinc-600">{leadMessage}</p> : null}
-        </form>
-      </section>
+
+          <div className="space-y-6">
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900">Audit results</h2>
+              <div className="mt-4 rounded-xl border border-slate-900 bg-slate-900 px-5 py-6 text-white">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-300">Potential savings</p>
+                <p className="mt-2 text-4xl font-semibold">${auditResult.totalMonthlySavings}/mo</p>
+                <p className="mt-1 text-sm text-slate-300">${auditResult.totalAnnualSavings}/year</p>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Lead tier</p>
+                  <p className="mt-1 text-xl font-semibold capitalize text-slate-900">{auditResult.leadTier}</p>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Status</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">
+                    {isHighSavings
+                      ? "High-impact optimization found"
+                      : isLowOrOptimal
+                        ? "Current stack is mostly optimized"
+                        : "Meaningful optimization available"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                {isHighSavings ? (
+                  <div>
+                    <p className="text-sm font-medium text-slate-800">
+                      You could save more than $500/month. Credex can help secure discounted infrastructure credits.
+                    </p>
+                    <button className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                      Book Credex consultation
+                    </button>
+                  </div>
+                ) : isLowOrOptimal ? (
+                  <p className="text-sm text-slate-700">
+                    You are spending well for your current setup. We do not manufacture savings - opt in below to get
+                    notified when new optimizations apply.
+                  </p>
+                ) : (
+                  <p className="text-sm text-slate-700">
+                    Your stack has clear savings opportunities. Capture this report and we will send your audit
+                    summary.
+                  </p>
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-base font-semibold text-slate-900">Per-tool recommendations</h3>
+              <div className="mt-4 space-y-3">
+                {auditResult.items.map((item) => (
+                  <article key={item.toolId} className="rounded-xl border border-slate-200 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-semibold text-slate-900">{item.toolName}</p>
+                      <p className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                        Save ${item.estimatedMonthlySavings}/mo
+                      </p>
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">
+                      Current ${item.currentMonthlySpend}/mo {"->"} Recommended ${item.recommendedMonthlySpend}/mo
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-slate-800">{item.recommendedAction}</p>
+                    <p className="mt-1 text-xs text-slate-600">{item.reason}</p>
+                    <p className="mt-1 text-xs text-slate-500">{item.rationale}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-base font-semibold text-slate-900">
+                {hasMeaningfulSavings ? "Email me this report" : "Notify me about future optimizations"}
+              </h3>
+              <p className="mt-1 text-xs text-slate-600">Value is shown first; email capture is optional.</p>
+              <form onSubmit={submitLead} className="mt-4">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Work email *
+                    <input
+                      type="email"
+                      className={fieldClassName}
+                      value={leadForm.email}
+                      onChange={(e) => setLeadForm((prev) => ({ ...prev, email: e.target.value }))}
+                    />
+                  </label>
+                  <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Company name (optional)
+                    <input
+                      type="text"
+                      className={fieldClassName}
+                      value={leadForm.companyName}
+                      onChange={(e) => setLeadForm((prev) => ({ ...prev, companyName: e.target.value }))}
+                    />
+                  </label>
+                  <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Role (optional)
+                    <input
+                      type="text"
+                      className={fieldClassName}
+                      value={leadForm.role}
+                      onChange={(e) => setLeadForm((prev) => ({ ...prev, role: e.target.value }))}
+                    />
+                  </label>
+                  <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    Team size (optional)
+                    <input
+                      type="number"
+                      min={1}
+                      className={fieldClassName}
+                      value={leadForm.teamSize}
+                      onChange={(e) => setLeadForm((prev) => ({ ...prev, teamSize: e.target.value }))}
+                    />
+                  </label>
+                </div>
+                <button
+                  type="submit"
+                  className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                >
+                  {isHighSavings ? "Capture report and book consult" : "Capture report"}
+                </button>
+                {leadMessage ? <p className="mt-2 text-xs text-slate-600">{leadMessage}</p> : null}
+              </form>
+            </section>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
