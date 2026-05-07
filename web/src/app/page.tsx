@@ -20,9 +20,23 @@ const defaultInput: AuditInput = {
   tools: defaultTools,
 };
 
+type LeadFormState = {
+  email: string;
+  companyName: string;
+  role: string;
+  teamSize: string;
+};
+
 export default function Home() {
   const [input, setInput] = useState<AuditInput>(defaultInput);
   const hasLoadedFromStorage = useRef(false);
+  const [leadForm, setLeadForm] = useState<LeadFormState>({
+    email: "",
+    companyName: "",
+    role: "",
+    teamSize: "",
+  });
+  const [leadMessage, setLeadMessage] = useState("");
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -53,6 +67,9 @@ export default function Home() {
   }, [input]);
 
   const auditResult = useMemo(() => runAudit(input), [input]);
+  const hasMeaningfulSavings = auditResult.totalMonthlySavings >= 100;
+  const isHighSavings = auditResult.totalMonthlySavings > 500;
+  const isLowOrOptimal = auditResult.totalMonthlySavings < 100;
 
   const setUseCase = (value: UseCase) => {
     setInput((prev) => ({ ...prev, primaryUseCase: value }));
@@ -63,6 +80,26 @@ export default function Home() {
       ...prev,
       tools: prev.tools.map((tool) => (tool.toolId === toolId ? { ...tool, ...patch } : tool)),
     }));
+  };
+
+  const submitLead = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!leadForm.email.trim()) {
+      setLeadMessage("Please add an email to capture this report.");
+      return;
+    }
+
+    if (isHighSavings) {
+      setLeadMessage("Report captured. This stack has high savings potential - book a Credex consult next.");
+      return;
+    }
+
+    if (isLowOrOptimal) {
+      setLeadMessage("Thanks! We'll notify you when new optimization opportunities apply to your stack.");
+      return;
+    }
+
+    setLeadMessage("Report captured. Check your inbox for your audit summary.");
   };
 
   return (
@@ -146,19 +183,48 @@ export default function Home() {
 
       <section className="mt-6 rounded-xl border border-zinc-200 p-5">
         <h2 className="text-lg font-medium">Audit result</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <div className="rounded-lg bg-zinc-50 p-4">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">Monthly savings</p>
-            <p className="text-2xl font-semibold">${auditResult.totalMonthlySavings}</p>
-          </div>
-          <div className="rounded-lg bg-zinc-50 p-4">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">Annual savings</p>
-            <p className="text-2xl font-semibold">${auditResult.totalAnnualSavings}</p>
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg bg-zinc-900 p-5 text-white md:col-span-2">
+            <p className="text-xs uppercase tracking-wide text-zinc-300">Potential savings</p>
+            <p className="mt-2 text-4xl font-semibold">${auditResult.totalMonthlySavings}/mo</p>
+            <p className="mt-1 text-zinc-300">${auditResult.totalAnnualSavings}/year</p>
           </div>
           <div className="rounded-lg bg-zinc-50 p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Lead tier</p>
             <p className="text-2xl font-semibold capitalize">{auditResult.leadTier}</p>
           </div>
+          <div className="rounded-lg bg-zinc-50 p-4">
+            <p className="text-xs uppercase tracking-wide text-zinc-500">Savings quality</p>
+            <p className="text-lg font-semibold">
+              {isHighSavings
+                ? "High-impact optimization found"
+                : isLowOrOptimal
+                  ? "Current stack is mostly optimized"
+                  : "Meaningful optimizations available"}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-lg border border-zinc-200 bg-white p-4">
+          {isHighSavings ? (
+            <div>
+              <p className="text-sm font-medium text-emerald-700">
+                You could save more than $500/month. Credex can help lock in discounted infrastructure credits.
+              </p>
+              <button className="mt-3 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white">
+                Book Credex consultation
+              </button>
+            </div>
+          ) : isLowOrOptimal ? (
+            <p className="text-sm text-zinc-700">
+              You are spending well for your current setup. We do not manufacture savings - opt in below to get
+              notified when new optimizations apply.
+            </p>
+          ) : (
+            <p className="text-sm text-zinc-700">
+              Your stack has clear savings opportunities. Capture this report and we will send your audit summary.
+            </p>
+          )}
         </div>
 
         <div className="mt-5 space-y-3">
@@ -168,12 +234,58 @@ export default function Home() {
                 <p className="font-medium">{item.toolName}</p>
                 <p className="text-sm text-emerald-700">Potential savings: ${item.estimatedMonthlySavings}/mo</p>
               </div>
+              <p className="mt-1 text-xs text-zinc-500">
+                Current spend ${item.currentMonthlySpend}/mo {"->"} recommended spend $
+                {item.recommendedMonthlySpend}/mo
+              </p>
               <p className="mt-1 text-sm">{item.recommendedAction}</p>
               <p className="mt-1 text-xs text-zinc-600">{item.reason}</p>
               <p className="mt-1 text-xs text-zinc-500">{item.rationale}</p>
             </div>
           ))}
         </div>
+
+        <form onSubmit={submitLead} className="mt-6 rounded-lg border border-zinc-200 p-4">
+          <h3 className="text-sm font-semibold">
+            {hasMeaningfulSavings ? "Email me this report" : "Notify me about future optimizations"}
+          </h3>
+          <p className="mt-1 text-xs text-zinc-600">Value is shown first; email capture is optional.</p>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <input
+              type="email"
+              placeholder="Work email *"
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+              value={leadForm.email}
+              onChange={(e) => setLeadForm((prev) => ({ ...prev, email: e.target.value }))}
+            />
+            <input
+              type="text"
+              placeholder="Company name (optional)"
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+              value={leadForm.companyName}
+              onChange={(e) => setLeadForm((prev) => ({ ...prev, companyName: e.target.value }))}
+            />
+            <input
+              type="text"
+              placeholder="Role (optional)"
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+              value={leadForm.role}
+              onChange={(e) => setLeadForm((prev) => ({ ...prev, role: e.target.value }))}
+            />
+            <input
+              type="number"
+              min={1}
+              placeholder="Team size (optional)"
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+              value={leadForm.teamSize}
+              onChange={(e) => setLeadForm((prev) => ({ ...prev, teamSize: e.target.value }))}
+            />
+          </div>
+          <button type="submit" className="mt-3 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white">
+            {isHighSavings ? "Capture report and book consult" : "Capture report"}
+          </button>
+          {leadMessage ? <p className="mt-2 text-xs text-zinc-600">{leadMessage}</p> : null}
+        </form>
       </section>
     </main>
   );
