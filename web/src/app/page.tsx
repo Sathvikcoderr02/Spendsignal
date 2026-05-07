@@ -27,6 +27,11 @@ type LeadFormState = {
   teamSize: string;
 };
 
+type SummaryApiResponse = {
+  summary: string;
+  fallbackUsed: boolean;
+};
+
 export default function Home() {
   const [input, setInput] = useState<AuditInput>(defaultInput);
   const hasLoadedFromStorage = useRef(false);
@@ -37,6 +42,12 @@ export default function Home() {
     teamSize: "",
   });
   const [leadMessage, setLeadMessage] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryState, setSummaryState] = useState<{ key: string; text: string; meta: string }>({
+    key: "",
+    text: "",
+    meta: "",
+  });
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -70,6 +81,11 @@ export default function Home() {
   const hasMeaningfulSavings = auditResult.totalMonthlySavings >= 100;
   const isHighSavings = auditResult.totalMonthlySavings > 500;
   const isLowOrOptimal = auditResult.totalMonthlySavings < 100;
+  const summaryKey = `${input.primaryUseCase}-${input.teamSize}-${auditResult.totalMonthlySavings}-${auditResult.totalAnnualSavings}-${auditResult.items
+    .map((item) => `${item.toolId}:${item.estimatedMonthlySavings}:${item.recommendedMonthlySpend}`)
+    .join("|")}`;
+  const visibleSummary = summaryState.key === summaryKey ? summaryState.text : "";
+  const visibleSummaryMeta = summaryState.key === summaryKey ? summaryState.meta : "";
 
   const setUseCase = (value: UseCase) => {
     setInput((prev) => ({ ...prev, primaryUseCase: value }));
@@ -80,6 +96,37 @@ export default function Home() {
       ...prev,
       tools: prev.tools.map((tool) => (tool.toolId === toolId ? { ...tool, ...patch } : tool)),
     }));
+  };
+
+  const generatePersonalizedSummary = async () => {
+    try {
+      setSummaryLoading(true);
+      setSummaryState({ key: summaryKey, text: "", meta: "" });
+      const response = await fetch("/api/summary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audit: auditResult,
+          primaryUseCase: input.primaryUseCase,
+          teamSize: input.teamSize,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate summary");
+      }
+
+      const payload = (await response.json()) as SummaryApiResponse;
+      setSummaryState({
+        key: summaryKey,
+        text: payload.summary,
+        meta: payload.fallbackUsed ? "Generated using fallback summary." : "Generated using LLM summary.",
+      });
+    } catch {
+      setSummaryState({ key: summaryKey, text: "", meta: "Could not generate AI summary right now." });
+    } finally {
+      setSummaryLoading(false);
+    }
   };
 
   const submitLead = (e: React.FormEvent<HTMLFormElement>) => {
@@ -253,6 +300,25 @@ export default function Home() {
                     summary.
                   </p>
                 )}
+              </div>
+
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-slate-900">AI personalized summary</h3>
+                  <button
+                    type="button"
+                    onClick={generatePersonalizedSummary}
+                    disabled={summaryLoading}
+                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {summaryLoading ? "Generating..." : "Generate summary"}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  Uses LLM synthesis for personalized recommendations, with a deterministic fallback on API failure.
+                </p>
+                {visibleSummary ? <p className="mt-3 text-sm text-slate-700">{visibleSummary}</p> : null}
+                {visibleSummaryMeta ? <p className="mt-2 text-xs text-slate-500">{visibleSummaryMeta}</p> : null}
               </div>
             </section>
 
