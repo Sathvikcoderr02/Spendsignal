@@ -25,11 +25,17 @@ type LeadFormState = {
   companyName: string;
   role: string;
   teamSize: string;
+  website: string;
 };
 
 type SummaryApiResponse = {
   summary: string;
   fallbackUsed: boolean;
+};
+
+type ShareApiResponse = {
+  shareId: string;
+  shareUrl: string;
 };
 
 export default function Home() {
@@ -40,8 +46,13 @@ export default function Home() {
     companyName: "",
     role: "",
     teamSize: "",
+    website: "",
   });
   const [leadMessage, setLeadMessage] = useState("");
+  const [leadLoading, setLeadLoading] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryState, setSummaryState] = useState<{ key: string; text: string; meta: string }>({
     key: "",
@@ -129,24 +140,78 @@ export default function Home() {
     }
   };
 
-  const submitLead = (e: React.FormEvent<HTMLFormElement>) => {
+  const createShareLink = async () => {
+    try {
+      setShareLoading(true);
+      setShareMessage("");
+      const response = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          audit: auditResult,
+          teamSize: input.teamSize,
+          primaryUseCase: input.primaryUseCase,
+        }),
+      });
+
+      const data = (await response.json()) as Partial<ShareApiResponse> & { message?: string };
+      if (!response.ok || !data.shareUrl) {
+        setShareMessage(data.message ?? "Unable to create a share link right now.");
+        return;
+      }
+
+      setShareUrl(data.shareUrl);
+      setShareMessage("Share link created. Anyone with this URL can view the public report.");
+    } catch {
+      setShareMessage("Unable to create a share link right now.");
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  const submitLead = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!leadForm.email.trim()) {
       setLeadMessage("Please add an email to capture this report.");
       return;
     }
 
-    if (isHighSavings) {
-      setLeadMessage("Report captured. This stack has high savings potential - book a Credex consult next.");
-      return;
-    }
+    try {
+      setLeadLoading(true);
+      setLeadMessage("");
+      const parsedTeamSize = Number(leadForm.teamSize);
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: leadForm.email.trim(),
+          companyName: leadForm.companyName.trim(),
+          role: leadForm.role.trim(),
+          teamSize: Number.isFinite(parsedTeamSize) && parsedTeamSize > 0 ? parsedTeamSize : null,
+          honeypot: leadForm.website,
+          audit: auditResult,
+        }),
+      });
 
-    if (isLowOrOptimal) {
-      setLeadMessage("Thanks! We'll notify you when new optimization opportunities apply to your stack.");
-      return;
-    }
+      const data = (await response.json()) as { message?: string };
+      if (!response.ok) {
+        setLeadMessage(data.message ?? "Unable to capture report right now. Please try again.");
+        return;
+      }
 
-    setLeadMessage("Report captured. Check your inbox for your audit summary.");
+      setLeadMessage(
+        data.message ??
+          (isHighSavings
+            ? "Report captured. This stack has high savings potential - book a Credex consult next."
+            : isLowOrOptimal
+              ? "Thanks! We'll notify you when new optimization opportunities apply to your stack."
+              : "Report captured. Check your inbox for your audit summary."),
+      );
+    } catch {
+      setLeadMessage("Unable to capture report right now. Please try again.");
+    } finally {
+      setLeadLoading(false);
+    }
   };
 
   const fieldClassName =
@@ -324,6 +389,30 @@ export default function Home() {
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="text-base font-semibold text-slate-900">Per-tool recommendations</h3>
+              <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={createShareLink}
+                    disabled={shareLoading}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {shareLoading ? "Creating share link..." : "Create public share URL"}
+                  </button>
+                  {shareUrl ? (
+                    <a
+                      href={shareUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-medium text-slate-700 underline"
+                    >
+                      Open shared report
+                    </a>
+                  ) : null}
+                </div>
+                {shareUrl ? <p className="mt-2 break-all text-xs text-slate-600">{shareUrl}</p> : null}
+                {shareMessage ? <p className="mt-2 text-xs text-slate-500">{shareMessage}</p> : null}
+              </div>
               <div className="mt-4 space-y-3">
                 {auditResult.items.map((item) => (
                   <article key={item.toolId} className="rounded-xl border border-slate-200 p-4">
@@ -388,12 +477,27 @@ export default function Home() {
                       onChange={(e) => setLeadForm((prev) => ({ ...prev, teamSize: e.target.value }))}
                     />
                   </label>
+                  <label className="hidden">
+                    Website
+                    <input
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={leadForm.website}
+                      onChange={(e) => setLeadForm((prev) => ({ ...prev, website: e.target.value }))}
+                    />
+                  </label>
                 </div>
                 <button
                   type="submit"
+                  disabled={leadLoading}
                   className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
                 >
-                  {isHighSavings ? "Capture report and book consult" : "Capture report"}
+                  {leadLoading
+                    ? "Capturing..."
+                    : isHighSavings
+                      ? "Capture report and book consult"
+                      : "Capture report"}
                 </button>
                 {leadMessage ? <p className="mt-2 text-xs text-slate-600">{leadMessage}</p> : null}
               </form>
