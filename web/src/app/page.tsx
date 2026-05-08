@@ -216,17 +216,49 @@ export default function Home() {
 
   const fieldClassName =
     "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200";
+  const formatMoney = (value: number) => new Intl.NumberFormat("en-US").format(value);
 
   return (
     <main className="min-h-screen bg-slate-50 py-8">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
-        <header className="rounded-2xl border border-slate-200 bg-white px-6 py-8 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Credex</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">SpendSignal Audit</h1>
-          <p className="mt-3 max-w-2xl text-sm text-slate-600 md:text-base">
-            Identify AI tooling overspend, compare right-sized plans, and estimate monthly and annual savings in one
-            report.
-          </p>
+        <header className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 px-6 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-300">
+            Credex | AI spend optimization
+          </div>
+          <div className="px-6 py-8">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                Free audit
+              </span>
+              <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                No login required
+              </span>
+              <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+                2 min setup
+              </span>
+            </div>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+              SpendSignal Audit
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 md:text-base">
+              Identify AI tooling overspend, compare right-sized plans, and generate a shareable savings report with
+              actionable recommendations by tool.
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Monthly potential</p>
+                <p className="mt-1 text-lg font-semibold text-slate-900">${formatMoney(auditResult.totalMonthlySavings)}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Annual potential</p>
+                <p className="mt-1 text-lg font-semibold text-slate-900">${formatMoney(auditResult.totalAnnualSavings)}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">Lead priority</p>
+                <p className="mt-1 text-lg font-semibold capitalize text-slate-900">{auditResult.leadTier}</p>
+              </div>
+            </div>
+          </div>
         </header>
 
         <section className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
@@ -269,10 +301,13 @@ export default function Home() {
                 return (
                   <div
                     key={tool.id}
-                    className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-slate-300"
+                    className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-slate-300 hover:bg-white"
                   >
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-sm font-semibold text-slate-900">{tool.label}</p>
+                      <span className="rounded-md bg-slate-200/60 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                        {value.seats > 0 ? `${value.seats} seats` : "Not in use"}
+                      </span>
                     </div>
                     <div className="grid gap-3 md:grid-cols-3">
                       <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -318,13 +353,13 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 lg:sticky lg:top-6 lg:self-start">
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-slate-900">Audit results</h2>
               <div className="mt-4 rounded-xl border border-slate-900 bg-slate-900 px-5 py-6 text-white">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-300">Potential savings</p>
-                <p className="mt-2 text-4xl font-semibold">${auditResult.totalMonthlySavings}/mo</p>
-                <p className="mt-1 text-sm text-slate-300">${auditResult.totalAnnualSavings}/year</p>
+                <p className="mt-2 text-4xl font-semibold">${formatMoney(auditResult.totalMonthlySavings)}/mo</p>
+                <p className="mt-1 text-sm text-slate-300">${formatMoney(auditResult.totalAnnualSavings)}/year</p>
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -382,7 +417,11 @@ export default function Home() {
                 <p className="mt-2 text-xs text-slate-500">
                   Uses LLM synthesis for personalized recommendations, with a deterministic fallback on API failure.
                 </p>
-                {visibleSummary ? <p className="mt-3 text-sm text-slate-700">{visibleSummary}</p> : null}
+                {visibleSummary ? (
+                  <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">
+                    {visibleSummary}
+                  </p>
+                ) : null}
                 {visibleSummaryMeta ? <p className="mt-2 text-xs text-slate-500">{visibleSummaryMeta}</p> : null}
               </div>
             </section>
@@ -419,11 +458,12 @@ export default function Home() {
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-semibold text-slate-900">{item.toolName}</p>
                       <p className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
-                        Save ${item.estimatedMonthlySavings}/mo
+                        Save ${formatMoney(item.estimatedMonthlySavings)}/mo
                       </p>
                     </div>
                     <p className="mt-2 text-xs text-slate-500">
-                      Current ${item.currentMonthlySpend}/mo {"->"} Recommended ${item.recommendedMonthlySpend}/mo
+                      Current ${formatMoney(item.currentMonthlySpend)}/mo {"->"} Recommended $
+                      {formatMoney(item.recommendedMonthlySpend)}/mo
                     </p>
                     <p className="mt-2 text-sm font-medium text-slate-800">{item.recommendedAction}</p>
                     <p className="mt-1 text-xs text-slate-600">{item.reason}</p>
