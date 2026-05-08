@@ -41,7 +41,19 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      return NextResponse.json({ message: "Unable to create share link right now." }, { status: 500 });
+      const maybeMissingTable =
+        error.message.toLowerCase().includes("relation") &&
+        error.message.toLowerCase().includes("public_audits");
+      if (maybeMissingTable) {
+        return NextResponse.json(
+          { message: "Missing database table 'public_audits'. Run web/supabase/schema.sql in Supabase SQL editor." },
+          { status: 500 },
+        );
+      }
+      return NextResponse.json(
+        { message: `Unable to create share link right now. Supabase error: ${error.message}` },
+        { status: 500 },
+      );
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
 import { z } from "zod";
 import type { AuditResult } from "@/lib/audit/types";
 import { getSupabaseAdminClient } from "@/lib/server/supabaseAdmin";
+import { sendEmail } from "@/lib/email";
 
 const leadSchema = z.object({
   email: z.string().email(),
@@ -109,27 +109,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Unable to store lead right now." }, { status: 500 });
     }
 
-    const resendKey = process.env.RESEND_API_KEY;
-    const resendFromEmail = process.env.RESEND_FROM_EMAIL;
-    if (resendKey && resendFromEmail) {
-      const resend = new Resend(resendKey);
-      await resend.emails.send({
-        from: resendFromEmail,
-        to: payload.email,
-        subject: "Your AI Spend Audit from Credex",
-        html: buildConfirmationEmailHtml({
-          monthlySavings: payload.audit.totalMonthlySavings,
-          annualSavings: payload.audit.totalAnnualSavings,
-          leadTier,
-        }),
-      });
+    let emailStatusMessage = "Confirmation email sent.";
+    const emailResult = await sendEmail({
+      to: payload.email,
+      subject: "Your AI Spend Audit from Credex",
+      html: buildConfirmationEmailHtml({
+        monthlySavings: payload.audit.totalMonthlySavings,
+        annualSavings: payload.audit.totalAnnualSavings,
+        leadTier,
+      }),
+    });
+
+    if (!emailResult.success) {
+      emailStatusMessage = `Lead stored, but confirmation email failed: ${emailResult.error}`;
     }
 
     return NextResponse.json({
       message:
         payload.audit.totalMonthlySavings > 500
-          ? "Report captured. Credex will follow up for high-savings consultation."
-          : "Report captured. Confirmation email sent.",
+          ? `Report captured. Credex will follow up for high-savings consultation. ${emailStatusMessage}`
+          : `Report captured. ${emailStatusMessage}`,
     });
   } catch {
     return NextResponse.json({ message: "Unexpected server error while capturing lead." }, { status: 500 });
