@@ -16,5 +16,5 @@
 **Hours worked:** 2.6  
 **What I did:** Implemented backend lead capture with Supabase + Resend integration, added abuse protection (honeypot and rate limiting), shipped shareable public audit URLs with dynamic Open Graph/Twitter metadata, and polished UI hierarchy and styling for a cleaner product-quality presentation.  
 **What I learned:** End-to-end reliability depends on infrastructure setup as much as application code; clearer API error messages made debugging much faster when Supabase tables were missing.  
-**Blockers / what I'm stuck on:** Share link creation initially failed due to missing `public_audits` table in Supabase schema cache, and email delivery still depends on completing verified sender-domain setup in Resend.  
+**Blockers / what I'm stuck on:** Share link creation initially failed due to missing `public_audits` table in Supabase schema cache, and email delivery still depends on completing verified sender-domain setup in Resend and it failed silenetly and gave 200 ok response
 **Plan for tomorrow:** Finalize CI workflow, complete remaining required root documentation files, run deploy + Lighthouse checks, and do an end-to-end submission readiness pass.

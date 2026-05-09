@@ -1,0 +1,9 @@
+# Local env and secret dumps — never commit
+.env
+.env.*
+!.env.example
+.env.local
+web/.env.local
+Untitled
+env.txt
+*.pem
