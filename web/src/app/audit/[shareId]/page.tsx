@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { AuditResult } from "@/lib/audit/types";
+import { getPublicAppUrl } from "@/lib/server/publicAppUrl";
 import { getSupabaseAdminClient } from "@/lib/server/supabaseAdmin";
 
 type SharedAuditRecord = {
@@ -47,7 +48,7 @@ export async function generateMetadata({
     };
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = getPublicAppUrl();
   const url = `${appUrl}/audit/${shareId}`;
   const title = `AI spend audit: save $${sharedAudit.total_monthly_savings}/month`;
   const description = `Public SpendSignal report showing estimated savings of $${sharedAudit.total_monthly_savings}/month ($${sharedAudit.total_annual_savings}/year).`;

@@ -20,7 +20,7 @@ Deploy the **`web`** folder to Vercel (or similar). Set environment variables fr
 
 ## Live app
 
-Add your production URL here after each deploy: `https://YOUR-VERCEL-URL.vercel.app`
+[https://spendsignal-dm8a.vercel.app](https://spendsignal-dm8a.vercel.app/)
 
 ## Repo layout
 

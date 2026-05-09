@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { AuditResult, UseCase } from "@/lib/audit/types";
+import { getPublicAppUrl } from "@/lib/server/publicAppUrl";
 import { getSupabaseAdminClient } from "@/lib/server/supabaseAdmin";
 
 const sharePayloadSchema = z.object({
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const appUrl = getPublicAppUrl();
     return NextResponse.json({ shareId, shareUrl: `${appUrl}/audit/${shareId}` });
   } catch {
     return NextResponse.json({ message: "Unexpected error creating share link." }, { status: 500 });
