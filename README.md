@@ -1,8 +1,24 @@
 # SpendSignal (Credex AI Spend Audit)
 
-SpendSignal is a free web app for startup founders and engineering leads: enter AI tool plans, monthly spend, seats, and use case; get an instant savings audit, optional email capture, and a shareable public report link.
+SpendSignal is a free tool for startup founders and engineering managers who want to reduce AI tool costs. Users enter their current tools, plans, spend, seats, team size, and use case, then instantly get a clear savings report with action steps.
 
-The Next.js application lives in the **`web/`** directory.
+It is built as a Next.js app in `web/` and includes an audit engine, AI summary generation, lead capture, and public share links.
+
+## Screenshots
+
+Home + input form:
+
+![SpendSignal home and input form](web/docs/screenshots/01-input.png)
+
+Audit results + per-tool actions:
+
+![SpendSignal audit results](web/docs/screenshots/02-results.png)
+
+Public share page:
+
+![SpendSignal public shared audit](web/docs/screenshots/03-share.png)
+
+**Demo (screen recording):** [YouTube — SpendSignal walkthrough](https://youtu.be/Lox-3u4IIjM)
 
 ## Quick start
 
@@ -12,28 +28,51 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open `http://localhost:3000`.
 
 ## Deploy
 
-Deploy the **`web`** folder to Vercel (or similar). Set environment variables from `web/.env.example` in the hosting dashboard—never commit `.env.local` or secret dumps.
+Deploy the `web/` folder to Vercel, Netlify, or Render.
 
-## Live app
+Set these environment variables in your host dashboard:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `APP_URL`
+- `GEMINI_API_KEY` (optional, summary fallback works without it)
+- Email provider vars (`POSTMARK_*` or `SENDGRID_*` or `TWILIO_*`)
+
+Never commit `.env.local` or secret files.
+
+## Live URL
 
 [https://spendsignal-dm8a.vercel.app](https://spendsignal-dm8a.vercel.app/)
 
 ## Repo layout
 
-- `web/` — Next.js app (UI, audit engine, API routes)
-- `PRICING_DATA.md`, `PROMPTS.md`, `DEVLOG.md` — assignment deliverables at repo root
-- `.github/workflows/ci.yml` — runs `npm run lint` and `npm run test` on every push to `main`
+- `web/` — Next.js app (UI, engine, API, share pages)
+- `web/supabase/schema.sql` — required DB tables
+- `.github/workflows/ci.yml` — lint + test on push to `main`
+- Root docs (`ARCHITECTURE.md`, `DEVLOG.md`, `REFLECTION.md`, etc.) — assignment deliverables
 
-## Decisions (preview)
+## Decisions (5 trade-offs)
 
-1. **App in `web/`** — avoids conflicts with tooling at repo root and matches common monorepo layout.
-2. **Postmark for transactional email** — works with current sender constraints; provider logic is isolated in `web/src/lib/email.ts`.
-3. **Supabase for leads and public shares** — single backend for persistence and share IDs.
-4. **Deterministic audit math** — LLM used only for the optional summary, not for savings numbers.
-5. **CI on `main`** — keeps lint and the five audit-engine tests green for reviewers.
+1. **Deterministic rules for audit math, not AI**
+   - Why: savings logic must be finance-defensible and repeatable.
+   - Trade-off: less flexible than an AI-only engine, but much safer.
 
-(Full “Decisions” section with five trade-offs will be expanded in the final README pass before submission.)
+2. **AI only for personalized summary**
+   - Why: summary tone can benefit from LLM writing, but numbers must stay rule-based.
+   - Trade-off: added API dependency, handled with strong fallback.
+
+3. **Supabase for both leads and shared audits**
+   - Why: one backend for two data paths keeps setup simple.
+   - Trade-off: tighter coupling to Supabase in MVP stage.
+
+4. **Local storage for form persistence**
+   - Why: best UX for no-login flow; users can refresh and keep work.
+   - Trade-off: stored state is per browser/device, not cross-device.
+
+5. **Simple anti-abuse (rate limit + honeypot)**
+   - Why: enough for MVP and fast to ship.
+   - Trade-off: not as strong as CAPTCHA, but less friction for real users.

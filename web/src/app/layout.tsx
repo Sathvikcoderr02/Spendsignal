@@ -1,20 +1,36 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { getPublicAppUrl } from "@/lib/server/publicAppUrl";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const siteUrl = getPublicAppUrl();
+const metadataBase = new URL(siteUrl);
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const title = "SpendSignal | Credex AI Spend Audit";
+const description =
+  "Free AI tool spend audit for startups: enter plans and spend, get instant savings actions, optional email capture, and a shareable report link.";
 
 export const metadata: Metadata = {
-  title: "Credex AI Spend Auditor",
-  description: "Audit and optimize startup AI tooling spend in minutes.",
+  metadataBase,
+  title: {
+    default: title,
+    template: "%s | SpendSignal",
+  },
+  description,
+  applicationName: "SpendSignal",
+  openGraph: {
+    title,
+    description,
+    url: metadataBase,
+    siteName: "SpendSignal",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({
@@ -23,10 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
