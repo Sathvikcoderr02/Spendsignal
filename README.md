@@ -48,6 +48,28 @@ Never commit `.env.local` or secret files.
 
 [https://spendsignal-dm8a.vercel.app](https://spendsignal-dm8a.vercel.app/)
 
+## Lighthouse (mobile, for the brief)
+
+Credex asks for **mobile** scores on the **deployed** URL: Performance ≥ 85, Accessibility ≥ 90, Best Practices ≥ 90.
+
+**Chrome extensions often lower Performance.** Lighthouse even warns about this. For a fair number:
+
+1. Use **Incognito** (or a Chrome profile with **no extensions**), **mobile** device preset, then run Lighthouse again.
+2. Or use the CLI so extensions are not in the way:
+
+```bash
+cd web
+npx lighthouse https://spendsignal-dm8a.vercel.app \
+  --only-categories=performance,accessibility,best-practices \
+  --form-factor=mobile \
+  --chrome-flags="--headless --disable-extensions --no-sandbox" \
+  --view
+```
+
+3. Test the **production** build when possible (`npm run build` then `npm run start` locally, or the live Vercel URL after deploy).
+
+Your latest run (**76 / 91 / 100 / 100**) already passes Accessibility, Best Practices, and SEO. Performance is **9 points** below 85; a clean run without extensions often bumps that up. If it stays under 85 after that, say so and we can dig into LCP/TBT next.
+
 ## Repo layout
 
 - `web/` — Next.js app (UI, engine, API, share pages)
