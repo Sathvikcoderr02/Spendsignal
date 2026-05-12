@@ -44,6 +44,15 @@ flowchart TD
 
 This stack helps ship MVP fast while keeping code readable and testable.
 
+## Lead capture abuse protection
+
+`POST /api/leads` (`web/src/app/api/leads/route.ts`):
+
+- **Honeypot:** optional `website` field — humans never see it; if it is filled, the handler returns success text and skips DB insert (stops dumb bots).
+- **Rate limit:** in-memory map keyed by first IP in `x-forwarded-for`, max **8** requests per **10** minutes; returns **429** when exceeded.
+
+Why not hCaptcha yet: faster MVP, fewer steps for a real founder filling out one form. Trade-off: in-memory limit resets on cold start and is not shared across server instances — fine for low traffic; at scale use Redis or edge rate limiting.
+
 ## If this needs to handle 10k audits/day
 
 I would make these upgrades:

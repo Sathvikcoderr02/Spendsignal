@@ -1,43 +1,61 @@
 # Reflection
 
-## 1) Hardest bug this week and how I debugged it
+## 1) Hardest bug this week, and how I debugged it
 
-The hardest bug was around share link creation. The UI said link creation failed, but the request body looked correct and the route was running. I first thought it was a frontend state bug, so I checked the request payload and response handling. That was fine. Then I tested the API route directly and printed error messages from Supabase. The error message showed a relation issue for `public_audits`. At first, I thought it was a typo in table name, but code and SQL were matching. Next I checked the Supabase project and realized the schema file had not actually been run there. After running `web/supabase/schema.sql`, the API call started working and returned a valid `shareId`.
+The worst one was the **share link** button on the home page. I would click **“Create public share URL”** in `web/src/app/page.tsx`, the UI said something like it could not create the link, but the Network tab showed a POST going out with a normal body. I thought I broke the fetch or the JSON shape first. I re-read the handler and the `/api/share` route in `web/src/app/api/share/route.ts` maybe three times. Nothing obvious.
 
-I also hit a second issue: email API returned success but no email reached inbox. I checked provider logs and saw sender domain limitations. That helped me change error messaging so the UI still confirms lead storage separately from email status. The main lesson was simple: in full-stack work, many “code bugs” are really config or infra state bugs. Better error text made debugging much faster.
+Then I logged the real Supabase error on the server side. Postgres was complaining about a **missing relation** — basically the **`public_audits`** table did not exist in the Supabase project yet. I had the SQL file on disk (`web/supabase/schema.sql`) but I had never pasted it into the Supabase SQL editor for that project. I felt dumb for maybe 10 minutes, but it was not a typo in the code. I ran the SQL in Supabase, tried the button again, and I got a real `shareId` and a working `/audit/...` URL.
 
-## 2) A decision I reversed mid-week
+Second smaller mess: **email**. The lead row saved in `audit_leads` but my inbox stayed empty. I checked Postmark (and later SendGrid) logs and saw domain / sender rules I did not fully understand at first. I changed the API so a failed email does not pretend the whole capture failed — `web/src/app/api/leads/route.ts` still returns success when the row is stored, and the JSON message tells you if the confirmation email part broke. That took me off the wrong path where I kept thinking “the route is broken” when really **storage worked** and **mail** was the flaky part.
 
-I reversed my first idea of using AI for the full audit recommendation logic. In my first pass, I considered passing tool data to an LLM and letting it decide the best plan and savings reasoning. I stopped that path after testing because outputs were not stable enough. The model could produce useful text, but savings math was not always exact and sometimes reason quality changed for the same input.
+Rough time lost on the share bug: maybe **45–60 minutes** of clicking and re-reading before I believed the database was the real problem.
 
-I switched to deterministic rule-based logic for all pricing and savings decisions. This made results reproducible, easier to test, and easier to defend to a finance person. Then I used AI only where it adds value safely: writing a personalized summary paragraph. I kept a strong fallback summary template if the LLM fails.
+## 2) A decision I reversed mid-week, and what made me reverse it
 
-This reversal improved trust in the product. Users should never wonder if a savings number changed due to model randomness. By separating “math engine” from “text explanation,” I got better reliability and still kept the product personalized.
+At the start I almost let an **LLM pick the savings math** — same inputs, “smart” paragraph, looked cool in a demo. I tried a few prompts where I passed the tool list and spend into the model and asked it to output recommended spend and savings per line.
 
-## 3) What I would build in week 2
+I reversed it fast. Same fake stack twice gave **slightly different numbers** once, and another time it wrote a confident sentence that did not match the math I could do by hand from `PRICING_DATA.md`. I did not want a founder to screenshot a number they cannot defend in a budget meeting.
 
-If I had one more week, I would focus on three areas: stronger trust, stronger growth loops, and better data learning.
+So I locked **all dollar math** into `web/src/lib/audit/engine.ts` with plain rules and tests in `web/src/lib/audit/engine.test.ts`. The only AI left is the **short summary** from `/api/summary` (Gemini) with a hard fallback string if the API key is missing or the call fails. That split felt boring on paper but it was the right call for trust.
 
-First, trust: I would add deeper audit transparency. For every recommendation, I would show source plan price, assumed usage-fit rule, and a “why this is safe” note. I would also add plan-specific warnings when switching might reduce capability. This would make it easier for finance and engineering managers to approve changes.
+## 3) What I would build in week 2 if I had it
 
-Second, growth: I would build PDF export and an embed widget. Many founders like sharing reports in investor updates or team Slack channels. A clean export gives more share moments. An embed script on blogs or newsletters could bring organic traffic.
+Week 2 I would not chase more “AI magic.” I would chase **proof and spread**.
 
-Third, learning: I would build analytics around conversion funnel steps (audit complete, summary generated, share created, lead captured, consult booked). Then I would run two copy experiments on CTA text for high-savings users. I would also add benchmark mode (“spend per developer vs similar team size”) to make the insight more sticky and more discussable.
+I would print next to each line item: **which rule fired** (right-size vs credits vs alt stack) and **which URL in `PRICING_DATA.md`** backs the list price part, so a finance person can scan it without asking me in DMs.
 
-## 4) How I used AI tools
+I would add a **PDF** or at least a clean print stylesheet so someone can drop the audit into Slack without a screenshot crop war. Right now people share PNGs and the text is not selectable — that is fine for marketing, bad for a finance thread.
 
-I used AI tools as a coding assistant, not as an autopilot. Main use cases were: writing first drafts for UI copy, generating TypeScript scaffold patterns, checking API route edge cases, and improving wording in docs. I also used AI to quickly compare alternative code structures when I got stuck on route organization.
+I would wire simple **events** (audit finished, share created, lead saved) so I am not guessing which step people quit on. Even a cheap log table or Plausible-style counts would beat my gut.
 
-I did not trust AI for final pricing numbers, final business assumptions, or final rule logic decisions. Those were always manually verified. I also did not trust AI for security-sensitive config. I checked environment variable handling and backend behavior directly.
+I would try one boring growth loop: email the user a link to their **public share URL** after capture so they reopen it instead of losing the tab.
 
-One specific case where AI was wrong: it suggested a fallback flow that treated all API failures as 500 hard errors in lead capture. That would have blocked useful conversions if only email failed. I changed it so lead storage success and email status are separated. Now users still get success when lead capture works, with a clear message if email delivery has an issue.
+If one thing slips, I would still ship the **rule labels + PDF** first because they make the product feel serious when a stranger lands from Twitter.
 
-Overall, AI helped speed, but manual judgment and testing decided final code.
+## 4) How I used AI tools (and where it lied to me)
 
-## 5) Self-rating (1-10) with reason
+I used **Cursor** as my editor day to day — tab complete, jump to file, small refactors, “explain this error” when Supabase spat a wall of text.
 
-- **Discipline: 8/10** — I worked in daily chunks, tracked progress in devlog, and kept moving even when infra issues slowed me down.
-- **Code quality: 7/10** — code is readable and typed, with clear route separation; I still want stronger test coverage beyond engine helpers.
-- **Design sense: 7/10** — result page is clean and share-ready, but I can improve visual hierarchy and mobile spacing further.
-- **Problem-solving: 8/10** — I debugged across frontend, API, and infra and fixed blockers with better logging and fallback behavior.
-- **Entrepreneurial thinking: 7/10** — I focused on honest savings and lead flow, but I want deeper benchmark and distribution experiments in week 2.
+I used **ChatGPT** sometimes for plain-English drafts of README bullets or to sanity-check an idea before I typed it into code.
+
+I used **Gemini** only inside the product for the **one** allowed LLM feature: the paragraph summary in `/api/summary/route.ts`. The math is not from Gemini.
+
+What I did **not** let AI do: pick final prices, pick final savings, touch `SUPABASE_SERVICE_ROLE_KEY`, or decide security rules. I typed those parts myself and re-read them.
+
+One time Cursor’s suggestion was straight wrong for my app: it pushed a pattern where **any** failure in the lead POST returned a **500** and a scary message to the user, even when **Supabase insert already worked** and only **email** failed. That would make people think “capture failed” when the lead was actually in the table. I kept the insert path and the email path separate in `leads/route.ts` so the story matches reality.
+
+So AI = fast typing and drafts. Me = merge button, tests, and checking the unhappy paths.
+
+## 5) Self-rating on a 1–10 scale for each, with one-sentence reason
+
+**Discipline — 8.** I kept a devlog even on light days and tried not to fake huge hour counts when I only did cleanup.
+
+**Code quality — 7.** TypeScript and small files help, but the home page is still one big client file and I would split it if I had another pass.
+
+**Design sense — 7.** It reads clear on desktop; mobile spacing could be tighter in a few stacks.
+
+**Problem-solving — 8.** I got unblocked when I stopped blaming React and started reading the real server and DB errors.
+
+**Entrepreneurial thinking — 7.** I thought about who would share a link and what “honest low savings” should say, but I did not run real paid experiments yet.
+
+If I had to pick one score to push up first it would be **code quality** by splitting `page.tsx` and adding a couple more tests around the API routes, not by adding more features.

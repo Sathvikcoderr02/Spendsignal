@@ -40,9 +40,20 @@ Set these environment variables in your host dashboard:
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `APP_URL`
 - `GEMINI_API_KEY` (optional, summary fallback works without it)
+- `NEXT_PUBLIC_CREDEX_CONSULT_URL` (optional; high-savings “Book consultation” link — defaults to `https://credex.rocks`)
+- `NEXT_PUBLIC_APP_URL` / `APP_URL` (canonical URL for share links; see `web/src/lib/server/publicAppUrl.ts`)
 - Email provider vars (`POSTMARK_*` or `SENDGRID_*` or `TWILIO_*`)
 
-Never commit `.env.local` or secret files.
+Copy `web/.env.example` to `web/.env.local` and fill values. Never commit `.env.local` or secret files.
+
+### Lead API abuse protection
+
+`/api/leads` uses two light controls (no CAPTCHA, less friction for real users):
+
+1. **Honeypot** — hidden `website` field in the form. Bots often fill every field; if it is non-empty, the API returns 200 with a generic “accepted” message and **does not** insert a row.
+2. **Rate limit** — by client IP from `x-forwarded-for`, max **8** POSTs per **10 minutes** per IP; over limit returns **429**.
+
+Why this choice: fast to ship, no third-party keys, blocks naive spam scripts. Trade-off: shared IPs (offices) can hit the cap; in production I would move limits to Redis or a gateway rule.
 
 ## Live URL
 

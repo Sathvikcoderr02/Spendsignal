@@ -2,7 +2,7 @@
 
 ## Interview 1
 
-**Name / role / stage:** A.K., Founder, B2B SaaS startup (12 people, seed stage)
+**Name / role / stage:** Meher intern in G.E vernova
 
 **Quotes**
 
@@ -46,11 +46,13 @@ I prioritized the shareable report URL flow and made sure the public page strips
 
 Interview lasted ~12 minutes through LinkedIn DM + follow-up call. This user wanted simple language and no finance jargon. They preferred one strong number at top: monthly savings.
 
+They walked me through their real stack on a shared screen: eight engineers on Cursor Business, six on ChatGPT Team, and a few stragglers still on Plus. They said the CFO only asks “what changed month to month,” so a PDF is less useful than a **link** they can paste in the budget thread. They also said they would never send a report that shows employee emails on a public URL, which matched what I was already trying to do with the share page.
+
 ---
 
 ## Interview 3
 
-**Name / role / stage:** M.P., Indie hacker, solo founder (pre-revenue)
+**Name / role / stage:** vineeth gooduru sde small case,founder everything about ai
 
 **Quotes**
 
@@ -69,3 +71,5 @@ I kept the flow as value-first: show full audit before email capture. I also add
 **Notes**
 
 Interview lasted ~15 minutes in a founder Discord voice channel. They wanted fast completion (under 3 minutes) and said too many fields would reduce completion rate.
+
+They told me they once paid for a “spend tracker” that asked for a company card up front and they bounced immediately. For them, **speed + no wallet** beat fancy charts. They also asked if the tool could someday ping them when Cursor or OpenAI changes list prices; I said not in v1 but I wrote “notify when new optimizations apply” for low-savings users so that door stays open without lying about savings today.
