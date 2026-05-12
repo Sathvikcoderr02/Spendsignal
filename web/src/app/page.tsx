@@ -7,6 +7,10 @@ import type { AuditInput, ToolInput, UseCase } from "@/lib/audit/types";
 
 const STORAGE_KEY = "credex-audit-form-v1";
 
+/** High-savings CTA: set in Vercel as NEXT_PUBLIC_CREDEX_CONSULT_URL (Calendly, mailto:, or site). */
+const CREDEX_CONSULT_URL =
+  process.env.NEXT_PUBLIC_CREDEX_CONSULT_URL?.trim() || "https://credex.rocks";
+
 const defaultTools = TOOL_CATALOG.map((tool): ToolInput => ({
   toolId: tool.id,
   planId: tool.plans[0]?.id ?? "custom",
@@ -385,9 +389,14 @@ export default function Home() {
                     <p className="text-sm font-medium text-slate-800">
                       You could save more than $500/month. Credex can help secure discounted infrastructure credits.
                     </p>
-                    <button className="mt-3 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                    <a
+                      href={CREDEX_CONSULT_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                    >
                       Book Credex consultation
-                    </button>
+                    </a>
                   </div>
                 ) : isLowOrOptimal ? (
                   <p className="text-sm text-slate-700">
