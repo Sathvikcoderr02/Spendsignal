@@ -54,18 +54,18 @@ Shipped `feat: persist full audit record tied to share_id`: `POST /api/share` an
 
 Shipped `feat: pricing snapshot compare and detect-changes API`: `detectChangesForStoredAudit()` compares stored snapshot vs live catalog/rules, re-runs engine, writes `last_change_payload` + `change_detected_at`. `POST /api/detect-changes` with `DETECT_CHANGES_SECRET` / `dryRun`. Second migration `20260521_round2_change_detection.sql`.
 
----
 
-## 2026-05-20 20:10 — Git cleanup
-
-Removed duplicate Round 2 commits from branch history (scaffold + separate plan doc) so GitHub only shows the two real feature commits. Accidentally picked up a screenshot in rebase once — removed from commit. Still need `git push --force-with-lease` if remote had old history.
-
----
 
 ## 2026-05-20 20:45 — Honest scope check
 
 **Done:** Feature 1 (persistent storage), Feature 2 (detection + documented pricing update path).  
 **Not done:** Feature 3 (consolidated notification emails), Feature 4 (diff compare page).  
 **Cut for time (will document in PR):** Vercel Cron, bonus unsubscribe, public “what changed” page, admin dashboard.
+
+---
+
+## 2026-05-21 — Supabase migrations applied
+
+Ran combined Round 2 SQL in Supabase SQL Editor after project resume (was paused). Verified 6 columns on `public_audits`: `email`, `input_stack`, `pricing_snapshot`, `pricing_version`, `last_change_payload`, `change_detected_at`. Ready to test share/lead + `detect-changes` locally and on Vercel preview.
 
 
