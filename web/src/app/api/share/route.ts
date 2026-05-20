@@ -1,14 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import type { AuditResult, UseCase } from "@/lib/audit/types";
+import type { AuditInput, AuditResult, UseCase } from "@/lib/audit/types";
+import { AUDIT_ENGINE_RULES_VERSION } from "@/lib/audit/engineRules";
+import { buildPricingSnapshot } from "@/lib/pricing/pricingSnapshot";
 import { getPublicAppUrl } from "@/lib/server/publicAppUrl";
 import { getSupabaseAdminClient } from "@/lib/server/supabaseAdmin";
 
 const sharePayloadSchema = z.object({
   audit: z.custom<AuditResult>(),
+  input: z.custom<AuditInput>(),
   teamSize: z.number().int().positive(),
   primaryUseCase: z.custom<UseCase>(),
+  email: z.string().email().optional(),
 });
 
 export async function POST(request: Request) {
@@ -30,24 +34,40 @@ export async function POST(request: Request) {
     }
 
     const shareId = randomUUID();
-    const { audit, teamSize, primaryUseCase } = parsed.data;
+    const { audit, input, teamSize, primaryUseCase, email } = parsed.data;
+    const pricingSnapshot = buildPricingSnapshot();
+
     const { error } = await supabase.from("public_audits").insert({
       share_id: shareId,
+      email: email ?? null,
       team_size: teamSize,
       primary_use_case: primaryUseCase,
       total_monthly_savings: audit.totalMonthlySavings,
       total_annual_savings: audit.totalAnnualSavings,
       lead_tier: audit.leadTier,
       audit_payload: audit,
+      input_stack: input,
+      pricing_snapshot: pricingSnapshot,
+      pricing_version: AUDIT_ENGINE_RULES_VERSION,
     });
 
     if (error) {
-      const maybeMissingTable =
-        error.message.toLowerCase().includes("relation") &&
-        error.message.toLowerCase().includes("public_audits");
-      if (maybeMissingTable) {
+      const message = error.message.toLowerCase();
+      if (message.includes("relation") && message.includes("public_audits")) {
         return NextResponse.json(
-          { message: "Missing database table 'public_audits'. Run web/supabase/schema.sql in Supabase SQL editor." },
+          {
+            message:
+              "Missing database table 'public_audits'. Run web/supabase/schema.sql (and migrations) in Supabase SQL editor.",
+          },
+          { status: 500 },
+        );
+      }
+      if (message.includes("column") && (message.includes("input_stack") || message.includes("pricing_snapshot"))) {
+        return NextResponse.json(
+          {
+            message:
+              "Database needs Round 2 columns. Run web/supabase/migrations/20260520_round2_stored_audits.sql in Supabase.",
+          },
           { status: 500 },
         );
       }

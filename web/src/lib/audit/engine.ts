@@ -1,13 +1,10 @@
+import {
+  CREDITS_DISCOUNT_MULTIPLIER,
+  RIGHTSIZE_PER_SEAT_TARGETS,
+  USE_CASE_ALT_BENCHMARK,
+} from "./engineRules";
 import { TOOL_LABELS_BY_ID } from "./pricingCatalog";
-import type { AuditInput, AuditResult, ToolInput, UseCase } from "./types";
-
-const USE_CASE_ALT_BENCHMARK: Record<UseCase, { label: string; targetPerSeat: number }> = {
-  coding: { label: "Cursor Pro or GitHub Copilot Individual", targetPerSeat: 20 },
-  writing: { label: "Claude Pro", targetPerSeat: 20 },
-  data: { label: "ChatGPT Team or Gemini Pro mix", targetPerSeat: 30 },
-  research: { label: "Claude Pro + ChatGPT Plus blend", targetPerSeat: 20 },
-  mixed: { label: "Mixed-seat stack with monthly caps", targetPerSeat: 25 },
-};
+import type { AuditInput, AuditResult, ToolInput } from "./types";
 
 const formatCurrency = (value: number): string => `$${value.toFixed(0)}`;
 
@@ -16,16 +13,6 @@ type Scenario = {
   spend: number;
   reason: string;
   rationale: string;
-};
-
-const RIGHTSIZE_PER_SEAT_TARGETS: Record<string, number> = {
-  "chatgpt:team": 20,
-  "claude:team": 20,
-  "claude:max": 20,
-  "cursor:business": 20,
-  "github-copilot:business": 10,
-  "gemini:ultra": 20,
-  "windsurf:teams": 15,
 };
 
 const canRightSize = (tool: ToolInput): boolean => {
@@ -77,7 +64,7 @@ export function runAudit(input: AuditInput): AuditResult {
     }
 
     if (tool.monthlySpend > 0) {
-      const creditsSpend = tool.monthlySpend * 0.8;
+      const creditsSpend = tool.monthlySpend * CREDITS_DISCOUNT_MULTIPLIER;
       scenarios.push({
         action: "Buy equivalent usage via infrastructure credits",
         spend: creditsSpend,

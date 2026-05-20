@@ -56,6 +56,7 @@ export default function Home() {
   const [leadLoading, setLeadLoading] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
+  const [shareId, setShareId] = useState("");
   const [shareMessage, setShareMessage] = useState("");
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryState, setSummaryState] = useState<{ key: string; text: string; meta: string }>({
@@ -153,6 +154,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           audit: auditResult,
+          input,
           teamSize: input.teamSize,
           primaryUseCase: input.primaryUseCase,
         }),
@@ -165,6 +167,9 @@ export default function Home() {
       }
 
       setShareUrl(data.shareUrl);
+      if (data.shareId) {
+        setShareId(data.shareId);
+      }
       setShareMessage("Share link created. Anyone with this URL can view the public report.");
     } catch {
       setShareMessage("Unable to create a share link right now.");
@@ -194,13 +199,19 @@ export default function Home() {
           teamSize: Number.isFinite(parsedTeamSize) && parsedTeamSize > 0 ? parsedTeamSize : null,
           honeypot: leadForm.website,
           audit: auditResult,
+          input,
+          shareId: shareId || undefined,
         }),
       });
 
-      const data = (await response.json()) as { message?: string };
+      const data = (await response.json()) as { message?: string; shareId?: string };
       if (!response.ok) {
         setLeadMessage(data.message ?? "Unable to capture report right now. Please try again.");
         return;
+      }
+
+      if (data.shareId) {
+        setShareId(data.shareId);
       }
 
       setLeadMessage(
