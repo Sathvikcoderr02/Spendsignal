@@ -28,7 +28,9 @@ create table if not exists public.public_audits (
   audit_payload jsonb not null,
   input_stack jsonb,
   pricing_snapshot jsonb,
-  pricing_version text
+  pricing_version text,
+  last_change_payload jsonb,
+  change_detected_at timestamptz
 );
 
 create index if not exists public_audits_created_at_idx on public.public_audits (created_at desc);

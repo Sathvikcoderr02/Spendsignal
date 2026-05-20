@@ -15,6 +15,8 @@ export type StoredPublicAuditRow = {
   input_stack: AuditInput | null;
   pricing_snapshot: PricingSnapshot | null;
   pricing_version: string | null;
+  last_change_payload: unknown | null;
+  change_detected_at: string | null;
 };
 
 export type StoredAuditResponse = {
