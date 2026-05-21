@@ -1,10 +1,18 @@
 import Link from "next/link";
 import { triggerDetectChangesAction } from "./actions";
 
-export default function ReauditAdminPage() {
+export default async function ReauditAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ok?: string; error?: string }>;
+}) {
   const enabled =
     process.env.NODE_ENV !== "production" ||
     process.env.NEXT_PUBLIC_ENABLE_REAUDIT_ADMIN === "true";
+
+  const params = await searchParams;
+  const flashOk = params.ok ? decodeURIComponent(params.ok) : null;
+  const flashError = params.error ? decodeURIComponent(params.error) : null;
 
   if (!enabled) {
     return (
@@ -29,6 +37,17 @@ export default function ReauditAdminPage() {
         <code>pricingCatalog.ts</code> / <code>engineRules.ts</code> and bumping{" "}
         <code>AUDIT_ENGINE_RULES_VERSION</code>.
       </p>
+
+      {flashOk ? (
+        <p className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-900">
+          {flashOk}
+        </p>
+      ) : null}
+      {flashError ? (
+        <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+          {flashError}
+        </p>
+      ) : null}
 
       <div className="mt-8 space-y-4">
         <form action={triggerDetectChangesAction} className="rounded-xl border border-slate-200 bg-white p-4">

@@ -18,16 +18,19 @@ Round 2 extends SpendSignal so saved audits stay useful when AI vendor pricing o
 
 **4. Compare diff view** — `/audit/[shareId]/compare` shows original saved results vs a fresh engine run on the same input. Changed tools appear side-by-side with highlights; unchanged tools are collapsed. Total savings delta is shown at the top.
 
+**5. UI to trigger detection and emails (no curl required)** — `/admin/reaudit` runs the same job as `POST /api/detect-changes` via server actions (dry run / save only / save + email). On each compare page, **Send pricing-update email** re-detects that audit and mails the saved address if something changed. Local dev enables admin automatically; set `NEXT_PUBLIC_ENABLE_REAUDIT_ADMIN=true` on Vercel Preview.
+
 ## How to test (preview)
 
 1. Run both SQL migrations in Supabase (`20260520_round2_stored_audits.sql` and `20260521_round2_change_detection.sql`).
-2. Set Preview env vars: `SUPABASE_*`, `EMAIL_PROVIDER` + Postmark (or SendGrid), `DETECT_CHANGES_SECRET`.
-3. On preview: run an audit with real spend, **Create share URL**, **Capture report** with email.
+2. Set Preview env vars: `SUPABASE_*`, `EMAIL_PROVIDER` + Postmark (or SendGrid), `DETECT_CHANGES_SECRET`, `NEXT_PUBLIC_ENABLE_REAUDIT_ADMIN=true`.
+3. On preview: run an audit with real spend, **Create share URL**, **Capture report** with email (Round 1 confirmation email — expected).
 4. Edit `pricingCatalog.ts` and/or bump `AUDIT_ENGINE_RULES_VERSION` in `engineRules.ts`, redeploy preview.
-5. `curl -X POST "https://<preview>/api/detect-changes" -H "x-detect-changes-secret: <secret>"`
-6. Check inbox for one consolidated pricing-change email; open `/audit/<shareId>/compare`.
+5. **UI (recommended):** open `/admin/reaudit` → **Send pricing-update emails**, or on `/audit/<shareId>/compare` → **Send pricing-update email**.
+6. **API (optional):** `curl -X POST "https://<preview>/api/detect-changes" -H "x-detect-changes-secret: <secret>"`
+7. Check inbox for **“Pricing update on your audit”** (not the Round 1 “audit is ready” subject); open compare page.
 
-Local: `cd web && npm run dev` — detect-changes works without secret in non-production.
+Local: `cd web && npm run dev` — `/admin/reaudit` works without extra env; detect-changes API works without secret in non-production.
 
 ## What I cut (and why)
 

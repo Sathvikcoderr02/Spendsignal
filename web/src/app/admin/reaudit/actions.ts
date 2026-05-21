@@ -1,8 +1,9 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { runDetectChanges } from "@/lib/reaudit/runDetectChanges";
 
-export async function triggerDetectChangesAction(formData: FormData) {
+export async function triggerDetectChangesAction(formData: FormData): Promise<void> {
   const mode = formData.get("mode")?.toString() ?? "full";
 
   const result = await runDetectChanges({
@@ -11,12 +12,9 @@ export async function triggerDetectChangesAction(formData: FormData) {
   });
 
   if ("status" in result) {
-    return { ok: false as const, message: result.message };
+    redirect(`/admin/reaudit?error=${encodeURIComponent(result.message)}`);
   }
 
-  return {
-    ok: true as const,
-    message: `Processed ${result.processed} audits. Affected: ${result.affectedCount}. Emails sent: ${result.emailsSent}/${result.emailsAttempted}.`,
-    result,
-  };
+  const message = `Processed ${result.processed} audits. Affected: ${result.affectedCount}. Emails sent: ${result.emailsSent}/${result.emailsAttempted}.`;
+  redirect(`/admin/reaudit?ok=${encodeURIComponent(message)}`);
 }

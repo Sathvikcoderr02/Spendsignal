@@ -52,5 +52,5 @@
 
 Round 2 uses a **timestamped** log (assignment format, 10–15 entries). Full log: **[ROUND2_DEVLOG.md](./ROUND2_DEVLOG.md)**.
 
-**Summary:** Round 2 complete on `round-2-reaudit` — persist, detect-changes, consolidated emails, compare UI, `ROUND2_PR.md` / `ROUND2_REFLECTION.md`. See [ROUND2_DEVLOG.md](./ROUND2_DEVLOG.md).
+**Summary:** Round 2 on `round-2-reaudit` — persist, detect-changes, consolidated emails, compare UI, admin/compare UI to send Round 2 mail (not only curl), `ROUND2_PR.md` / `ROUND2_REFLECTION.md`. See [ROUND2_DEVLOG.md](./ROUND2_DEVLOG.md).
 

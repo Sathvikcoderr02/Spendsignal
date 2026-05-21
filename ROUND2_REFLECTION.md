@@ -14,6 +14,8 @@ Second: **Supabase paused** overnight. DNS failed until I resumed the project an
 
 **Compare page re-runs the engine live** instead of storing a second full result row. Less schema churn; the “new” side is always current catalog/rules.
 
+**UI for emails after curl-only testing.** I added `/admin/reaudit` and a compare-page button so reviewers are not stuck on terminal commands. Lead capture still sends the Round 1 mail; Round 2 mail is intentional after pricing changes.
+
 ## 3) What I’d do with another day
 
 Add **idempotent email** (don’t resend if `last_change_payload` unchanged). Add **PDF export** on the compare page for finance threads. Wire a **weekly cron** once deploy env is stable.

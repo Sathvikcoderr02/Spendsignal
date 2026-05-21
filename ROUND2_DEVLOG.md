@@ -64,11 +64,10 @@ Shipped `feat: pricing snapshot compare and detect-changes API`: `detectChangesF
 
 ---
 
-
+## 2026-05-21 ~08:00 — Supabase migrations applied
 
 Slept ~9h (11:00 PM → 8:00 AM) after yesterday’s commits; picked up infra before more code.
 
-## 2026-05-21 ~9:30 AM — Supabase migrations applied
 Ran combined Round 2 SQL in Supabase SQL Editor after project resume (was paused). Verified 6 columns on `public_audits`: `email`, `input_stack`, `pricing_snapshot`, `pricing_version`, `last_change_payload`, `change_detected_at`. Ready to test share/lead + `detect-changes` locally and on Vercel preview.
 
 ---
@@ -82,5 +81,17 @@ Added `pricingChangeEmail.ts`: group affected audits by email (one message per u
 ## 2026-05-21 — Commit 6: compare diff page + submission docs
 
 Shipped `/audit/[shareId]/compare`: original `audit_payload` vs live `runAudit(input_stack)`, savings delta banner, changed tools side-by-side (amber highlight), unchanged tools in collapsed `<details>`. Link from public share page when `input_stack` exists. Email CTA now points to compare. Added `ROUND2_PR.md` (~500 words, test plan + cuts) and `ROUND2_REFLECTION.md` (AI disclosure, 36h tradeoffs). Tests in `compareView.test.ts`.
+
+---
+
+## 2026-05-21 ~1:20 PM — UI for Round 2 emails (not only curl)
+
+Reviewers and I needed a way to trigger pricing-change mail without curl. Added:
+
+- **`/admin/reaudit`** — dry run, detect+save, or detect+save+email all affected audits (local dev always on; preview needs `NEXT_PUBLIC_ENABLE_REAUDIT_ADMIN=true`).
+- **Compare page button** — “Send pricing-update email” on `/audit/[shareId]/compare` for one audit (server action; uses saved email).
+- **`runDetectChanges.ts`** — shared logic for API route and UI.
+
+**Note:** “Capture report” still sends the Round 1 confirmation email only. Round 2 mail fires after a detected change + admin/compare trigger (or `POST /api/detect-changes`).
 
 
