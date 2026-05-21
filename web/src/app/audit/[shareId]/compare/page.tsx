@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CompareNotifyButton } from "./notify-button";
 import { runAudit } from "@/lib/audit/engine";
 import type { AuditChangePayload } from "@/lib/reaudit/detectChanges";
 import { buildCompareRows, compareSummary } from "@/lib/reaudit/compareView";
@@ -100,7 +101,11 @@ export default async function AuditComparePage({
             <Link href="/" className="text-slate-600 underline hover:text-slate-900">
               Run a new audit
             </Link>
+            <Link href="/admin/reaudit" className="text-slate-600 underline hover:text-slate-900">
+              Admin: email all affected audits
+            </Link>
           </div>
+          {row.email ? <CompareNotifyButton shareId={shareId} /> : null}
         </header>
 
         <section className="mt-6 rounded-2xl border-2 border-slate-900 bg-slate-900 px-6 py-6 text-white shadow-sm">
