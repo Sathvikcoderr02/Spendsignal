@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { detectChangesForStoredAudit } from "@/lib/reaudit/detectChanges";
+import {
+  buildConsolidatedPricingChangeEmail,
+  groupAffectedAuditsByEmail,
+  type AffectedAuditForEmail,
+} from "@/lib/reaudit/pricingChangeEmail";
 import type { StoredPublicAuditRow } from "@/lib/audit/storedAudit";
+import { sendEmail } from "@/lib/email";
+import { getPublicAppUrl } from "@/lib/server/publicAppUrl";
 import { getSupabaseAdminClient } from "@/lib/server/supabaseAdmin";
 import { buildPricingSnapshot } from "@/lib/pricing/pricingSnapshot";
 import { AUDIT_ENGINE_RULES_VERSION } from "@/lib/audit/engineRules";
@@ -27,6 +34,9 @@ function isAuthorized(request: Request): boolean {
  * 3. Update `PRICING_DATA.md` at repo root
  * 4. Redeploy preview/production
  * 5. POST /api/detect-changes (with secret header in production)
+ *
+ * Query: dryRun=true — detect only, no DB writes, no emails.
+ *        skipEmail=true — save detection rows but do not send mail.
  */
 export async function POST(request: Request) {
   try {
@@ -36,6 +46,7 @@ export async function POST(request: Request) {
 
     const url = new URL(request.url);
     const dryRun = url.searchParams.get("dryRun") === "true";
+    const skipEmail = url.searchParams.get("skipEmail") === "true";
 
     let supabase;
     try {
@@ -70,11 +81,7 @@ export async function POST(request: Request) {
     }
 
     const audits = rows ?? [];
-    const affected: Array<{
-      shareId: string;
-      email: string;
-      changePayload: NonNullable<ReturnType<typeof detectChangesForStoredAudit>>["changePayload"];
-    }> = [];
+    const affected: AffectedAuditForEmail[] = [];
 
     for (const row of audits) {
       const detection = detectChangesForStoredAudit(row);
@@ -108,10 +115,35 @@ export async function POST(request: Request) {
 
     const currentSnapshot = buildPricingSnapshot();
 
+    const emailResults: Array<{ email: string; auditCount: number; sent: boolean; error?: string }> = [];
+
+    if (!dryRun && !skipEmail && affected.length > 0) {
+      const appUrl = getPublicAppUrl();
+      const byEmail = groupAffectedAuditsByEmail(affected);
+
+      for (const [email, emailAudits] of byEmail) {
+        const { subject, html } = buildConsolidatedPricingChangeEmail({
+          audits: emailAudits,
+          appUrl,
+        });
+        const result = await sendEmail({ to: email, subject, html });
+        emailResults.push({
+          email,
+          auditCount: emailAudits.length,
+          sent: result.success,
+          error: result.success ? undefined : result.error,
+        });
+      }
+    }
+
     return NextResponse.json({
       processed: audits.length,
       affectedCount: affected.length,
       dryRun,
+      skipEmail,
+      emailsAttempted: emailResults.length,
+      emailsSent: emailResults.filter((r) => r.sent).length,
+      emailResults,
       currentPricingVersion: AUDIT_ENGINE_RULES_VERSION,
       currentSnapshotCapturedAt: currentSnapshot.capturedAt,
       affected,

@@ -2,7 +2,7 @@
 
 **Window:** 2026-05-20 10:00 → 2026-05-21 22:00 (36h)  
 **Branch:** `round-2-reaudit` (preview deploy; do not merge to `main`)  
-**Status at last update:** 2 of 4 core features shipped (storage + detection). Emails + diff UI not done yet.
+**Status at last update:** 3 of 4 core features shipped (storage + detection + emails). Compare diff UI not done yet (commit 6).
 
 ---
 
@@ -64,8 +64,17 @@ Shipped `feat: pricing snapshot compare and detect-changes API`: `detectChangesF
 
 ---
 
-## 2026-05-21 — Supabase migrations applied
 
+
+Slept ~9h (11:00 PM → 8:00 AM) after yesterday’s commits; picked up infra before more code.
+
+## 2026-05-21 ~9:30 AM — Supabase migrations applied
 Ran combined Round 2 SQL in Supabase SQL Editor after project resume (was paused). Verified 6 columns on `public_audits`: `email`, `input_stack`, `pricing_snapshot`, `pricing_version`, `last_change_payload`, `change_detected_at`. Ready to test share/lead + `detect-changes` locally and on Vercel preview.
+
+---
+
+## 2026-05-21  12 PM— Commit 5: consolidated pricing-change emails
+
+Added `pricingChangeEmail.ts`: group affected audits by email (one message per user), HTML covers pricing row changes, old vs new recommendations, savings delta, re-open link to `/audit/[shareId]`. Wired into `POST /api/detect-changes` after detection saves (`dryRun` / `skipEmail` skip mail). Response includes `emailsSent` + per-recipient errors. Vitest for grouping and template.
 
 
