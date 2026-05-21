@@ -52,5 +52,5 @@
 
 Round 2 uses a **timestamped** log (assignment format, 10–15 entries). Full log: **[ROUND2_DEVLOG.md](./ROUND2_DEVLOG.md)**.
 
-**Summary (2026-05-20):** ~3h. Shipped persistent audits + pricing snapshot (commit 1) and `POST /api/detect-changes` (commit 2). **Not shipped yet:** consolidated emails, compare diff UI, `ROUND2_PR.md` / `ROUND2_REFLECTION.md`. **Cut:** Vercel Cron (manual detect API instead), bonus unsubscribe / admin / public changelog.
+**Summary:** Round 2 complete on `round-2-reaudit` — persist, detect-changes, consolidated emails, compare UI, `ROUND2_PR.md` / `ROUND2_REFLECTION.md`. See [ROUND2_DEVLOG.md](./ROUND2_DEVLOG.md).
 

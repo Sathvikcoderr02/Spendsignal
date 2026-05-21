@@ -2,7 +2,7 @@
 
 **Window:** 2026-05-20 10:00 → 2026-05-21 22:00 (36h)  
 **Branch:** `round-2-reaudit` (preview deploy; do not merge to `main`)  
-**Status at last update:** 3 of 4 core features shipped (storage + detection + emails). Compare diff UI not done yet (commit 6).
+**Status at last update:** 4/4 core features shipped. Submission docs: `ROUND2_PR.md`, `ROUND2_REFLECTION.md`.
 
 ---
 
@@ -75,6 +75,12 @@ Ran combined Round 2 SQL in Supabase SQL Editor after project resume (was paused
 
 ## 2026-05-21  12 PM— Commit 5: consolidated pricing-change emails
 
-Added `pricingChangeEmail.ts`: group affected audits by email (one message per user), HTML covers pricing row changes, old vs new recommendations, savings delta, re-open link to `/audit/[shareId]`. Wired into `POST /api/detect-changes` after detection saves (`dryRun` / `skipEmail` skip mail). Response includes `emailsSent` + per-recipient errors. Vitest for grouping and template.
+Added `pricingChangeEmail.ts`: group affected audits by email (one message per user), HTML covers pricing row changes, old vs new recommendations, savings delta, link to `/audit/[shareId]/compare`. Wired into `POST /api/detect-changes` after detection saves (`dryRun` / `skipEmail` skip mail). Response includes `emailsSent` + per-recipient errors. Vitest for grouping and template.
+
+---
+
+## 2026-05-21 — Commit 6: compare diff page + submission docs
+
+Shipped `/audit/[shareId]/compare`: original `audit_payload` vs live `runAudit(input_stack)`, savings delta banner, changed tools side-by-side (amber highlight), unchanged tools in collapsed `<details>`. Link from public share page when `input_stack` exists. Email CTA now points to compare. Added `ROUND2_PR.md` (~500 words, test plan + cuts) and `ROUND2_REFLECTION.md` (AI disclosure, 36h tradeoffs). Tests in `compareView.test.ts`.
 
 

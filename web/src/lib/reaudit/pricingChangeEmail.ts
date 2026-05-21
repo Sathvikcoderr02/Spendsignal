@@ -59,7 +59,7 @@ function renderToolChangeRow(change: ToolRecommendationChange): string {
 
 function renderAuditSection(audit: AffectedAuditForEmail, appUrl: string): string {
   const { changePayload, shareId } = audit;
-  const auditUrl = `${appUrl}/audit/${shareId}`;
+  const auditUrl = `${appUrl}/audit/${shareId}/compare`;
   const delta = changePayload.resultSummary.monthlySavingsDelta;
   const deltaLabel =
     delta > 0 ? `+$${delta}/mo` : delta < 0 ? `-$${Math.abs(delta)}/mo` : "no change";
@@ -111,7 +111,7 @@ function renderAuditSection(audit: AffectedAuditForEmail, appUrl: string): strin
       ${toolBlock}
       <p style="margin:14px 0 0;">
         <a href="${auditUrl}" style="display:inline-block;padding:10px 16px;background:#0f172a;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
-          Re-open your audit
+          Review changes (compare view)
         </a>
       </p>
     </section>

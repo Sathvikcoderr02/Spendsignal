@@ -76,7 +76,9 @@ describe("buildConsolidatedPricingChangeEmail", () => {
     expect(subject).toContain("your audit");
     expect(html).toContain("+$20/mo");
     expect(html).toContain("Cursor Pro");
-    expect(html).toContain("https://preview.example.com/audit/11111111-1111-1111-1111-111111111111");
+    expect(html).toContain(
+      "https://preview.example.com/audit/11111111-1111-1111-1111-111111111111/compare",
+    );
     expect(html).toContain("one email for all affected");
   });
 

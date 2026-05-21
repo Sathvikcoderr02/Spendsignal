@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { AuditResult } from "@/lib/audit/types";
 import { getPublicAppUrl } from "@/lib/server/publicAppUrl";
@@ -12,6 +13,7 @@ type SharedAuditRecord = {
   total_annual_savings: number;
   lead_tier: string;
   audit_payload: AuditResult;
+  input_stack: unknown | null;
 };
 
 async function getSharedAudit(shareId: string): Promise<SharedAuditRecord | null> {
@@ -93,6 +95,16 @@ export default async function SharedAuditPage({
           <p className="mt-3 text-sm text-slate-600">
             Shared from a live audit. This view excludes private fields like email and company identity.
           </p>
+          {sharedAudit.input_stack ? (
+            <p className="mt-4">
+              <Link
+                href={`/audit/${shareId}/compare`}
+                className="text-sm font-semibold text-slate-900 underline hover:text-slate-600"
+              >
+                Compare original vs current pricing →
+              </Link>
+            </p>
+          ) : null}
         </header>
 
         <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
