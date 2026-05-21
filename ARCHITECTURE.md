@@ -19,6 +19,25 @@ flowchart TD
   M --> N[Open Graph and Twitter metadata]
 ```
 
+## Round 2 — re-audit flow (branch `round-2-reaudit`)
+
+```mermaid
+flowchart TD
+  P[Share or lead capture] --> Q[public_audits + input_stack + pricing_snapshot + email]
+  Q --> R[Admin /admin/reaudit or POST /api/detect-changes]
+  R --> S[diff snapshot vs live catalog + runAudit]
+  S --> T{Changed?}
+  T -->|yes| U[Save last_change_payload]
+  U --> V[One email per user via Postmark]
+  V --> W[Link to /audit/shareId/compare]
+  W --> X[Compare: saved result vs fresh engine run]
+  Q --> Y[Compare page: Send pricing-update email per audit]
+```
+
+- **Round 1 lead email** (`/api/leads`): “Your audit is ready” — sent on capture only.
+- **Round 2 pricing email**: after detection finds a change; triggered from `/admin/reaudit`, compare-page button, or curl.
+- **UI flags:** `NEXT_PUBLIC_ENABLE_REAUDIT_ADMIN` on preview; local dev shows admin without it.
+
 ## Data flow: input to audit result
 
 1. User enters plan, spend, seats, team size, and use case.

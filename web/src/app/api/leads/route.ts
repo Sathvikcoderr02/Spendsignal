@@ -1,6 +1,9 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import type { AuditResult } from "@/lib/audit/types";
+import type { AuditInput, AuditResult } from "@/lib/audit/types";
+import { AUDIT_ENGINE_RULES_VERSION } from "@/lib/audit/engineRules";
+import { buildPricingSnapshot } from "@/lib/pricing/pricingSnapshot";
 import { getSupabaseAdminClient } from "@/lib/server/supabaseAdmin";
 import { sendEmail } from "@/lib/email";
 
@@ -11,6 +14,8 @@ const leadSchema = z.object({
   teamSize: z.number().int().positive().max(2000).nullable(),
   honeypot: z.string().optional(),
   audit: z.custom<AuditResult>(),
+  input: z.custom<AuditInput>(),
+  shareId: z.string().uuid().optional(),
 });
 
 const ipStore = new Map<string, number[]>();
@@ -91,6 +96,7 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
+
     const leadTier = payload.audit.leadTier;
     const insertData = {
       email: payload.email,
@@ -109,6 +115,56 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Unable to store lead right now." }, { status: 500 });
     }
 
+    const pricingSnapshot = buildPricingSnapshot();
+    let auditShareId = payload.shareId;
+
+    if (auditShareId) {
+      const { error: updateError } = await supabase
+        .from("public_audits")
+        .update({
+          email: payload.email,
+          input_stack: payload.input,
+          audit_payload: payload.audit,
+          pricing_snapshot: pricingSnapshot,
+          pricing_version: AUDIT_ENGINE_RULES_VERSION,
+          total_monthly_savings: payload.audit.totalMonthlySavings,
+          total_annual_savings: payload.audit.totalAnnualSavings,
+          lead_tier: leadTier,
+        })
+        .eq("share_id", auditShareId);
+
+      if (updateError) {
+        return NextResponse.json(
+          { message: `Lead saved but could not link to shared audit: ${updateError.message}` },
+          { status: 500 },
+        );
+      }
+    } else {
+      auditShareId = randomUUID();
+      const { error: auditInsertError } = await supabase.from("public_audits").insert({
+        share_id: auditShareId,
+        email: payload.email,
+        team_size: payload.input.teamSize,
+        primary_use_case: payload.input.primaryUseCase,
+        total_monthly_savings: payload.audit.totalMonthlySavings,
+        total_annual_savings: payload.audit.totalAnnualSavings,
+        lead_tier: leadTier,
+        audit_payload: payload.audit,
+        input_stack: payload.input,
+        pricing_snapshot: pricingSnapshot,
+        pricing_version: AUDIT_ENGINE_RULES_VERSION,
+      });
+
+      if (auditInsertError) {
+        return NextResponse.json(
+          {
+            message: `Lead saved but could not store audit for re-audit: ${auditInsertError.message}. Run Round 2 migration SQL.`,
+          },
+          { status: 500 },
+        );
+      }
+    }
+
     let emailStatusMessage = "Confirmation email sent.";
     const emailResult = await sendEmail({
       to: payload.email,
@@ -125,6 +181,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
+      shareId: auditShareId,
       message:
         payload.audit.totalMonthlySavings > 500
           ? `Report captured. Credex will follow up for high-savings consultation. ${emailStatusMessage}`

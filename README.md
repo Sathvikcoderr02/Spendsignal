@@ -46,6 +46,20 @@ Set these environment variables in your host dashboard:
 
 Copy `web/.env.example` to `web/.env.local` and fill values. Never commit `.env.local` or secret files.
 
+### Round 2 — re-audit on pricing change (`round-2-reaudit` branch)
+
+Round 1 production URL stays on `main`. Round 2 adds stored audits, change detection, pricing-update emails, and a compare view.
+
+| Step | What |
+|------|------|
+| DB | Run `web/supabase/migrations/20260520_round2_stored_audits.sql` and `20260521_round2_change_detection.sql` in Supabase SQL Editor |
+| Flow | Audit → **Create share URL** → **Capture report** with email (stores snapshot; sends Round 1 confirmation) |
+| Change pricing | Edit `web/src/lib/audit/pricingCatalog.ts`, bump `AUDIT_ENGINE_RULES_VERSION` in `engineRules.ts`, restart/redeploy |
+| Send Round 2 email | **`/admin/reaudit`** → “Send pricing-update emails”, or **`/audit/<shareId>/compare`** → “Send pricing-update email” |
+| API | `POST /api/detect-changes` (curl; use `DETECT_CHANGES_SECRET` in production) |
+
+Env: `DETECT_CHANGES_SECRET`, `NEXT_PUBLIC_ENABLE_REAUDIT_ADMIN=true` on Vercel Preview for the admin page. Details: [ROUND2_PR.md](./ROUND2_PR.md), log: [ROUND2_DEVLOG.md](./ROUND2_DEVLOG.md).
+
 ### Lead API abuse protection
 
 `/api/leads` uses two light controls (no CAPTCHA, less friction for real users):
@@ -86,7 +100,7 @@ Your latest run (**76 / 91 / 100 / 100**) already passes Accessibility, Best Pra
 - `web/` — Next.js app (UI, engine, API, share pages)
 - `web/supabase/schema.sql` — required DB tables
 - `.github/workflows/ci.yml` — lint + test on push to `main`
-- Root docs (`ARCHITECTURE.md`, `DEVLOG.md`, `REFLECTION.md`, etc.) — assignment deliverables
+- Root docs (`ARCHITECTURE.md`, `DEVLOG.md`, `REFLECTION.md`, `ROUND2_PR.md`, `ROUND2_DEVLOG.md`, etc.) — assignment deliverables
 
 ## Decisions (5 trade-offs)
 

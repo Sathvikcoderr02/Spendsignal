@@ -44,6 +44,13 @@
 **Hours worked:** 1.5  
 **What I did:** Final submission pass (docs + small product fixes only) `USER_INTERVIEWS.md` interviews 2 and 3 so each section has enough depth; wired **Book Credex consultation** to `NEXT_PUBLIC_CREDEX_CONSULT_URL` (defaults to `https://credex.rocks`) in `web/src/app/page.tsx`; added `web/.env.example`; documented **honeypot + IP rate limit** for `/api/leads` in `README.md` and `ARCHITECTURE.md`; added **audit engine assumption** table to `PRICING_DATA.md` (right-size targets, use-case benchmarks, 20% credits line) so finance readers see what is vendor list price vs MVP rule. README already has Lighthouse CLI note for extension-free runs.  
 **What I learned:** Small “last day” items (consult URL, abuse write-up, pricing trace) are easy to skip but they are exactly what a rubric checks line by line.  
-**Blockers / what I'm stuck on:** None.  
+**Blockers / what I'm stuck on:** None.
 
+---
+
+## Round 2 — Re-audit on pricing change
+
+Round 2 uses a **timestamped** log (assignment format, 10–15 entries). Full log: **[ROUND2_DEVLOG.md](./ROUND2_DEVLOG.md)**.
+
+**Summary:** Round 2 on `round-2-reaudit` — persist, detect-changes, consolidated emails, compare UI, admin/compare UI to send Round 2 mail (not only curl), `ROUND2_PR.md` / `ROUND2_REFLECTION.md`. See [ROUND2_DEVLOG.md](./ROUND2_DEVLOG.md).
 

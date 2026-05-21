@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:migrate:round2": "node scripts/apply-round2-migrations.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.3",
@@ -23,6 +24,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "pg": "^8.21.0",
     "puppeteer": "^24.43.0",
     "tailwindcss": "^4",
     "typescript": "^5",

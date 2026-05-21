@@ -19,13 +19,20 @@ create table if not exists public.public_audits (
   id bigint generated always as identity primary key,
   created_at timestamptz not null default now(),
   share_id text not null unique,
+  email text,
   team_size integer not null,
   primary_use_case text not null,
   total_monthly_savings integer not null,
   total_annual_savings integer not null,
   lead_tier text not null,
-  audit_payload jsonb not null
+  audit_payload jsonb not null,
+  input_stack jsonb,
+  pricing_snapshot jsonb,
+  pricing_version text,
+  last_change_payload jsonb,
+  change_detected_at timestamptz
 );
 
 create index if not exists public_audits_created_at_idx on public.public_audits (created_at desc);
 create index if not exists public_audits_share_id_idx on public.public_audits (share_id);
+create index if not exists public_audits_email_idx on public.public_audits (email) where email is not null;
